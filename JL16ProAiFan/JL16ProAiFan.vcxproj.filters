@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="EC">
+      <UniqueIdentifier>{6fb92a1c-9d19-44b7-8309-7c2a58810048}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RyzenAdj">
+      <UniqueIdentifier>{96a0c920-40cc-4357-975e-3b6acde7bc60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Drive">
+      <UniqueIdentifier>{ab454b92-eb90-4e4e-b016-5d266c01c8dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WMIC">
+      <UniqueIdentifier>{9cc69f07-873f-4c51-950a-07dabfab9c7d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="JL16ProAiFan.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="JL16ProAiFanDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="framework.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="resource1.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="auto_start_helper.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RunCommand.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="NvApiOC.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RyzenAdj-FAM_DRAGONRANGE\nb_smu_ops.h">
+      <Filter>RyzenAdj</Filter>
+    </ClInclude>
+    <ClInclude Include="RyzenAdj-FAM_DRAGONRANGE\OlsApi.h">
+      <Filter>RyzenAdj</Filter>
+    </ClInclude>
+    <ClInclude Include="RyzenAdj-FAM_DRAGONRANGE\OlsDef.h">
+      <Filter>RyzenAdj</Filter>
+    </ClInclude>
+    <ClInclude Include="RyzenAdj-FAM_DRAGONRANGE\ryzenadj.h">
+      <Filter>RyzenAdj</Filter>
+    </ClInclude>
+    <ClInclude Include="EmbeddedController-FAM__DRAGONRANGE\driver.hpp">
+      <Filter>EC</Filter>
+    </ClInclude>
+    <ClInclude Include="EmbeddedController-FAM__DRAGONRANGE\ec.hpp">
+      <Filter>EC</Filter>
+    </ClInclude>
+    <ClInclude Include="WMIC\wmic.h">
+      <Filter>WMIC</Filter>
+    </ClInclude>
+    <ClInclude Include="CFanControl.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="WMIC\BoardProduct.h">
+      <Filter>WMIC</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="JL16ProAiFan.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="JL16ProAiFanDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CFanControl.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="auto_start_helper.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="RunCommand.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="NvApiOC.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="RyzenAdj-FAM_DRAGONRANGE\nb_smu_ops.cpp">
+      <Filter>RyzenAdj</Filter>
+    </ClCompile>
+    <ClCompile Include="RyzenAdj-FAM_DRAGONRANGE\ryzenadj.cpp">
+      <Filter>RyzenAdj</Filter>
+    </ClCompile>
+    <ClCompile Include="RyzenAdj-FAM_DRAGONRANGE\winring0.cpp">
+      <Filter>RyzenAdj</Filter>
+    </ClCompile>
+    <ClCompile Include="EmbeddedController-FAM__DRAGONRANGE\driver.cpp">
+      <Filter>EC</Filter>
+    </ClCompile>
+    <ClCompile Include="EmbeddedController-FAM__DRAGONRANGE\ec.cpp">
+      <Filter>EC</Filter>
+    </ClCompile>
+    <ClCompile Include="WMIC\wmic.cpp">
+      <Filter>WMIC</Filter>
+    </ClCompile>
+    <ClCompile Include="WMIC\BoardProduct.cpp">
+      <Filter>WMIC</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="JL16ProAiFan.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\JL16ProAiFan.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="微信赞赏备注QQ号，看到后拉进QQ群领取新版软件.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="无标题.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="无标题1.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="无标题2.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="aufi0-snhvc-001.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="微信赞赏备注QQ号，看到后拉进QQ群领取新版软件.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="风扇_爱给网_aigei_com.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="fanico.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="icon3.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="尺寸256.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="favicon.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RyzenAdj-FAM_DRAGONRANGE\README.md">
+      <Filter>RyzenAdj</Filter>
+    </None>
+    <None Include="Drive\WinRing0x64.dll">
+      <Filter>Drive</Filter>
+    </None>
+    <None Include="Drive\WinRing0x64.sys">
+      <Filter>Drive</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Drive\WinRing0x64.lib">
+      <Filter>Drive</Filter>
+    </Library>
+  </ItemGroup>
+</Project>
