@@ -259,6 +259,9 @@
     <None Include="Drive\WinRing0x64.sys">
       <FileType>RES</FileType>
     </None>
+    <None Include="JiaoLongWMI.exe">
+      <FileType>RES</FileType>
+    </None>
     <None Include="RyzenAdj-FAM_DRAGONRANGE\README.md" />
   </ItemGroup>
   <ItemGroup>

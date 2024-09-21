@@ -182,6 +182,9 @@
     <None Include="Drive\WinRing0x64.sys">
       <Filter>Drive</Filter>
     </None>
+    <None Include="JiaoLongWMI.exe">
+      <Filter>Drive</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Drive\WinRing0x64.lib">

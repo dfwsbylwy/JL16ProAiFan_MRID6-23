@@ -303,8 +303,23 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			m_MemoryClockOffset = GetPrivateProfileInt(_T("config"), _T("m_MemoryClockOffset"), 0, JL16ProAiFanINI);
 			m_SLIDER_MemoryClockOffset.SetPos(m_MemoryClockOffset);//当前停留的位置
 			SetDlgItemInt(IDC_STATIC_MemoryClockOffset, m_MemoryClockOffset, FALSE);
+			//初始化CoreMemory超频
+			if (m_CoreClockOffset == 0 || m_MemoryClockOffset == 0)
+			{
+				if (m_CoreClockOffset != 0)
+				{
+					NvApiSetCoreOC(m_CoreClockOffset);
+				}
+				if (m_MemoryClockOffset != 0)
+				{
+					NvApiSetMemoryOC(m_MemoryClockOffset);
+				}
+			}
+			else
+			{
+				NvApiSetCoreMemoryOC(m_CoreClockOffset, m_MemoryClockOffset);
+			}
 
-			NvApiSetCoreMemoryOC(m_CoreClockOffset, m_MemoryClockOffset);//初始化CoreMemory超频
 
 			m_TimerAiFanControl = GetPrivateProfileInt(_T("config"), _T("m_TimerAiFanControl"), 1000, JL16ProAiFanINI);
 			m_SLIDER_TimerAiFanControl.SetPos(m_TimerAiFanControl / 100);//当前停留的位置
@@ -416,6 +431,7 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			//ryzenadj2do(libryzenadjData);
 			std::thread ryzenadjdoing(ryzenadj2do, std::ref(libryzenadjData));
 			ryzenadjdoing.detach();
+			std::string result = cmdProcess("sudo run  .\\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1");
 		}
 	}
 	else {
@@ -797,6 +813,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnAifanreboot()
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), JL16ProAiFanINI);
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_CHECKED);
 	CFanControl::m_MaxFanSpeedSet = -1;
+	std::string result = cmdProcess("sudo run  .\\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1");
 }
 
 
@@ -817,6 +834,8 @@ void CJL16ProAiFanDlg::OnBnClickedCheckFansetstatus()
 			CFanControl::m_FanSetStatus = TRUE;
 			WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), JL16ProAiFanINI);
 			CFanControl::m_MaxFanSpeedSet = -1;
+			//std::string cmdLine = "sudo run  .\\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1";
+			std::string result = cmdProcess("sudo run  .\\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1");
 			break;
 		}
 		case BST_UNCHECKED:
