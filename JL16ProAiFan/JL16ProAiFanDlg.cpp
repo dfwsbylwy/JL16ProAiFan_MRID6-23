@@ -624,12 +624,13 @@ LRESULT CJL16ProAiFanDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case PBT_APMSUSPEND:         //睡眠、休眠
 		{
-			OnExit();
+			//OnExit();
+			//KillTimer(TStartAiFanControl);
 		}
 		break;
 		case PBT_APMRESUMEAUTOMATIC: //睡眠、休眠恢复
 		{
-			OnExit();
+			//OnExit();
 		}
 		break;
 		}
