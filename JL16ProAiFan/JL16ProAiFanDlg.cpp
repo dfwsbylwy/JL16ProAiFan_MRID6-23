@@ -32,11 +32,12 @@
 
 
 //#define SetPerformaceMode2 R"(sudo run .\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"
+#define SetPerformaceMode2 R"(.\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"
 //TcmdProcess(SetPerformaceMode2);
 
-//#define JL16ProAiFanINI _T(".\\JL16ProAiFan.ini")
 #define JL16ProAiFanINI iniPatn
-#define SwitchMaxFanSpeed1 R"(sudo run  .\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1)"
+//#define SwitchMaxFanSpeed1 R"(sudo run  .\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1)"
+#define SwitchMaxFanSpeed1 R"(.\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1)"
 //TcmdProcess(SwitchMaxFanSpeed1);
 
 void TcmdProcess(std::string cmdLine) {
@@ -801,6 +802,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode02()
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
 	CFanControl::FCEC.writeByte(ModeAddress, QuietMode);//程序退出，强制写回办公mode
 	CFanControl::m_ModeSet = QuietMode;
+	//TcmdProcess(SetPerformaceMode2);
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
 		CFanControl::m_MaxFanSpeedSet = 22;
 }
