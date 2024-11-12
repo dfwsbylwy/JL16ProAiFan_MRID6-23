@@ -28,7 +28,6 @@ std::string cmdPopen(const std::string& cmd) {
 }
 
 
-
 /**
  * @brief	通过CreateProcess调用命令行并获取输出结果
  */

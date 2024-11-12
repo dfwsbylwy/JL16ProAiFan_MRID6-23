@@ -31,9 +31,19 @@
 #define ID_MENU_CLOSE 2002
 
 
+//#define SetPerformaceMode2 R"(sudo run .\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"
+//TcmdProcess(SetPerformaceMode2);
+
 //#define JL16ProAiFanINI _T(".\\JL16ProAiFan.ini")
 #define JL16ProAiFanINI iniPatn
+#define SwitchMaxFanSpeed1 R"(sudo run  .\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1)"
+//TcmdProcess(SwitchMaxFanSpeed1);
 
+void TcmdProcess(std::string cmdLine) {
+	std::string sss = cmdLine;
+	std::thread TcmdProcess(cmdProcess, sss);
+	TcmdProcess.detach();
+}
 
 
 // 定义一个函数将std::vector<int>转换为CString
@@ -431,7 +441,8 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			//ryzenadj2do(libryzenadjData);
 			std::thread ryzenadjdoing(ryzenadj2do, std::ref(libryzenadjData));
 			ryzenadjdoing.detach();
-			std::string result = cmdProcess("sudo run  .\\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1");
+			
+			TcmdProcess(SwitchMaxFanSpeed1);
 		}
 	}
 	else {
@@ -532,7 +543,6 @@ void CJL16ProAiFanDlg::getszDirectory()
 	else {
 		szDirectory = _T("0");
 		iniPatn = _T(".\\JL16ProAiFan.ini");
-		//iniPatn = reinterpret_cast<LPCWSTR>(_T(".\\JL16ProAiFan.ini")); 
 	}
 }
 
@@ -790,7 +800,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode02()
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
 	CFanControl::FCEC.writeByte(ModeAddress, QuietMode);//程序退出，强制写回办公mode
-	//CFanControl::m_ModeSet = QuietMode;
+	CFanControl::m_ModeSet = QuietMode;
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
 		CFanControl::m_MaxFanSpeedSet = 22;
 }
@@ -802,7 +812,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode00()
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
 	CFanControl::FCEC.writeByte(ModeAddress, GameMode);//程序退出，强制写回办公mode
-	//CFanControl::m_ModeSet = GameMode;
+	CFanControl::m_ModeSet = GameMode;
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35))
 		CFanControl::m_MaxFanSpeedSet = 35;
 }
@@ -814,7 +824,8 @@ void CJL16ProAiFanDlg::OnBnClickedBtnAifanreboot()
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), JL16ProAiFanINI);
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_CHECKED);
 	CFanControl::m_MaxFanSpeedSet = -1;
-	std::string result = cmdProcess("sudo run  .\\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1");
+
+	TcmdProcess(SwitchMaxFanSpeed1);
 }
 
 
@@ -835,8 +846,8 @@ void CJL16ProAiFanDlg::OnBnClickedCheckFansetstatus()
 			CFanControl::m_FanSetStatus = TRUE;
 			WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), JL16ProAiFanINI);
 			CFanControl::m_MaxFanSpeedSet = -1;
-			//std::string cmdLine = "sudo run  .\\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1";
-			std::string result = cmdProcess("sudo run  .\\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1");
+
+			TcmdProcess(SwitchMaxFanSpeed1);
 			break;
 		}
 		case BST_UNCHECKED:
