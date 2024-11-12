@@ -253,6 +253,7 @@
     <Image Include="风扇_爱给网_aigei_com.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\README.md" />
     <None Include="Drive\WinRing0x64.dll">
       <FileType>RES</FileType>
     </None>

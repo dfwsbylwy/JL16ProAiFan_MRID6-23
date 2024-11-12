@@ -185,6 +185,9 @@
     <None Include="JiaoLongWMI.exe">
       <Filter>Drive</Filter>
     </None>
+    <None Include="..\README.md">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Drive\WinRing0x64.lib">
