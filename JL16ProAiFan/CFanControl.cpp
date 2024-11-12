@@ -123,7 +123,7 @@ void CFanControl::CheckFanSpeedZero( )
 {
     //两次风扇速度读取为0，则强制初始化模式为游戏模式，否则更新风扇转速。
     //if (CFanControl::m_CPUFanSpeed == 0 && CFanControl::m_GPUFanSpeed == 0)
-    if (CFanControl::m_CPUFanSpeed <= 2100 && CFanControl::m_GPUFanSpeed <= 2100)
+    if (CFanControl::m_CPUFanSpeed < 2000 && CFanControl::m_GPUFanSpeed < 2000)
     {
         if (CFanControl::m_FanSpeedZero && CFanControl::m_MaxTemp >= 70)
         {

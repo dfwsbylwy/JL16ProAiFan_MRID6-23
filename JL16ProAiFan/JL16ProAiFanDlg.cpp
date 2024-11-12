@@ -642,6 +642,8 @@ LRESULT CJL16ProAiFanDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		case PBT_APMRESUMEAUTOMATIC: //睡眠、休眠恢复
 		{
 			//OnExit();
+
+			CFC.UpdateFanSpeed(); //重新更新风扇转速
 		}
 		break;
 		}
@@ -800,7 +802,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode02()
 	CFanControl::m_FanSetStatus = FALSE;
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
-	CFanControl::FCEC.writeByte(ModeAddress, QuietMode);//程序退出，强制写回办公mode
+	CFanControl::FCEC.writeByte(ModeAddress, QuietMode);
 	CFanControl::m_ModeSet = QuietMode;
 	//TcmdProcess(SetPerformaceMode2);
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
@@ -813,7 +815,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode00()
 	CFanControl::m_FanSetStatus = FALSE;
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
-	CFanControl::FCEC.writeByte(ModeAddress, GameMode);//程序退出，强制写回办公mode
+	CFanControl::FCEC.writeByte(ModeAddress, GameMode);
 	CFanControl::m_ModeSet = GameMode;
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35))
 		CFanControl::m_MaxFanSpeedSet = 35;
@@ -826,7 +828,8 @@ void CJL16ProAiFanDlg::OnBnClickedBtnAifanreboot()
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), JL16ProAiFanINI);
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_CHECKED);
 	CFanControl::m_MaxFanSpeedSet = -1;
-
+	CFanControl::FCEC.writeByte(ModeAddress, GameMode);
+	CFanControl::m_ModeSet = GameMode;
 	TcmdProcess(SwitchMaxFanSpeed1);
 }
 
