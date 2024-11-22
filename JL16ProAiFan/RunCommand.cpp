@@ -4,7 +4,7 @@
 #include <string>
 #include "RunCommand.h"
 #include <windows.h>
-
+#include <thread>
 
 
 
@@ -91,4 +91,11 @@ std::string cmdProcess(const std::string& cmdLine) {
 
 	free(buffer);
 	return ret;
+}
+
+
+void TcmdProcess(std::string cmdLine) {
+	std::string sss = cmdLine;
+	std::thread TcmdProcess(cmdProcess, sss);
+	TcmdProcess.detach();
 }

@@ -4,9 +4,18 @@
 //#include <deque>
 //#include <iostream>
 //#include <windows.h>
+#include "RunCommand.h"
 #include "ec.hpp"
 #include <thread>
 #include <chrono>
+
+
+//#define SetPerformaceMode2 R"(sudo run .\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"
+#define SetPerformaceMode2 R"(.\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"  //QuietMode
+#define SetPerformaceMode0 R"(.\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-0)"  //GameMode
+//TcmdProcess(SetPerformaceMode2);
+//TcmdProcess(SetPerformaceMode0);
+
 
 //using namespace std;
 //静态成员初始化值
@@ -123,16 +132,16 @@ void CFanControl::CheckFanSpeedZero( )
 {
     //两次风扇速度读取为0，则强制初始化模式为游戏模式，否则更新风扇转速。
     //if (CFanControl::m_CPUFanSpeed == 0 && CFanControl::m_GPUFanSpeed == 0)
-    if (CFanControl::m_CPUFanSpeed < 2000 && CFanControl::m_GPUFanSpeed < 2000)
+    if (CFanControl::m_CPUFanSpeed < 1900 || CFanControl::m_GPUFanSpeed < 1900)
     {
         if (CFanControl::m_FanSpeedZero && CFanControl::m_MaxTemp >= 70)
         {
-            if (CFanControl::FCEC.writeByte(ModeAddress, GameMode))
-            {
-                CFanControl::m_ModeSet = GameMode;
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                CFanControl::m_FanSpeedZero = FALSE;
-            }
+            TcmdProcess(SetPerformaceMode0);
+            CFanControl::FCEC.writeByte(ModeAddress, GameMode);
+            CFanControl::m_ModeSet = GameMode;
+            std::this_thread::sleep_for(std::chrono::milliseconds(700));
+            CFanControl::m_FanSpeedZero = FALSE;
+
 
         }
         //CFanControl::UpdateFanSpeed(); //更新风扇转速

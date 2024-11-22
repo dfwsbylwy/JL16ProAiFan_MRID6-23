@@ -1,6 +1,6 @@
 ﻿
 // JL16ProAiFanDlg.cpp: 实现文件
-
+#pragma once
 #include "pch.h"
 //#include "framework.h"
 #include "JL16ProAiFan.h"
@@ -31,20 +31,11 @@
 #define ID_MENU_CLOSE 2002
 
 
-//#define SetPerformaceMode2 R"(sudo run .\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"
-#define SetPerformaceMode2 R"(.\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"
-//TcmdProcess(SetPerformaceMode2);
 
 #define JL16ProAiFanINI iniPatn
 //#define SwitchMaxFanSpeed1 R"(sudo run  .\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1)"
 #define SwitchMaxFanSpeed1 R"(.\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1)"
 //TcmdProcess(SwitchMaxFanSpeed1);
-
-void TcmdProcess(std::string cmdLine) {
-	std::string sss = cmdLine;
-	std::thread TcmdProcess(cmdProcess, sss);
-	TcmdProcess.detach();
-}
 
 
 // 定义一个函数将std::vector<int>转换为CString
@@ -220,6 +211,10 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 	//检查主板是否为蛟龙16Pro，并按返回值选择分支。
 	if (isJL16Pro()) {
 		{
+			//初始化为游戏模式
+			//TcmdProcess(SetPerformaceMode0);
+			CFanControl::FCEC.writeByte(ModeAddress, GameMode);
+
 			// 初始化颜色按钮的键盘灯颜色
 			int r, g, b;
 			TCHAR szValue[256] = TEXT("");
@@ -642,7 +637,10 @@ LRESULT CJL16ProAiFanDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		case PBT_APMRESUMEAUTOMATIC: //睡眠、休眠恢复
 		{
 			//OnExit();
-
+			TcmdProcess(SetPerformaceMode0);
+			CFanControl::FCEC.writeByte(ModeAddress, GameMode);
+			CFanControl::m_ModeSet = GameMode;
+			std::this_thread::sleep_for(std::chrono::milliseconds(3500));
 			CFC.UpdateFanSpeed(); //重新更新风扇转速
 		}
 		break;
@@ -679,8 +677,10 @@ void CJL16ProAiFanDlg::OnExit()
 
 	KillTimer(TStartAiFanControl);
 
-	if (CFanControl::m_FanSetStatus == true && CFanControl::m_ModeSet >= 2)
+	//if (CFanControl::m_FanSetStatus == true && CFanControl::m_ModeSet >= 2)
+	if ( CFanControl::m_ModeSet >= 2)
 	{
+		TcmdProcess(SetPerformaceMode0);
 		CFanControl::FCEC.writeByte(ModeAddress, GameMode);//程序退出，强制写回办公mode
 		CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35);
 	}
@@ -705,19 +705,6 @@ LRESULT CJL16ProAiFanDlg::OnUpdateUI(WPARAM wParam, LPARAM lParam)
 	m_ProgressCtrl_GPUTemp.SetPos(CFanControl::m_GPUTemp);
 	m_ProgressCtrl_CPUFanSpeed.SetPos(CFanControl::m_CPUFanSpeed);
 	m_ProgressCtrl_GPUFanSpeed.SetPos(CFanControl::m_GPUFanSpeed);
-
-	// Set the progress bar color to red, green, blue, or
-	// the system default. The SetBarColor method has an
-	// effect only if the Windows system theme is Classic.
-
-	/*	m_progressCtrl.SetBarColor(RGB(255, 0, 0));
-
-		m_progressCtrl.SetBarColor(RGB(0, 255, 0));
-
-		m_progressCtrl.SetBarColor(RGB(0, 0, 255));
-
-		m_progressCtrl.SetBarColor(CLR_DEFAULT);*/
-
 
 	//std::string formatted = std::format("最高温度℃ = {}\n最大转速 *100 = {}\nModeSet = {:X}\nSteps = {}",\
 	//	         CFanControl::m_MaxTemp, CFanControl::m_MaxFanSpeedSet, CFanControl::m_ModeSet, CFanControl::m_Steps);
@@ -802,9 +789,9 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode02()
 	CFanControl::m_FanSetStatus = FALSE;
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
+	TcmdProcess(SetPerformaceMode2);
 	CFanControl::FCEC.writeByte(ModeAddress, QuietMode);
 	CFanControl::m_ModeSet = QuietMode;
-	//TcmdProcess(SetPerformaceMode2);
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
 		CFanControl::m_MaxFanSpeedSet = 22;
 }
@@ -815,6 +802,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode00()
 	CFanControl::m_FanSetStatus = FALSE;
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
+	TcmdProcess(SetPerformaceMode0);
 	CFanControl::FCEC.writeByte(ModeAddress, GameMode);
 	CFanControl::m_ModeSet = GameMode;
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35))
@@ -828,6 +816,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnAifanreboot()
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), JL16ProAiFanINI);
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_CHECKED);
 	CFanControl::m_MaxFanSpeedSet = -1;
+	TcmdProcess(SetPerformaceMode0);
 	CFanControl::FCEC.writeByte(ModeAddress, GameMode);
 	CFanControl::m_ModeSet = GameMode;
 	TcmdProcess(SwitchMaxFanSpeed1);
@@ -860,8 +849,9 @@ void CJL16ProAiFanDlg::OnBnClickedCheckFansetstatus()
 			// 如果需要在此处处理未选中状态的逻辑，可以添加代码
 			CFanControl::m_FanSetStatus = FALSE;
 			WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
+			TcmdProcess(SetPerformaceMode2);
 			CFanControl::FCEC.writeByte(ModeAddress, QuietMode);//程序退出，强制写回办公mode
-			//CFanControl::m_ModeSet = QuietMode;
+			CFanControl::m_ModeSet = QuietMode;
 			if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
 				CFanControl::m_MaxFanSpeedSet = 22;
 			break;

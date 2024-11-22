@@ -4,6 +4,12 @@
 #include <windows.h>
 #include "ec.hpp"
 
+
+#define SetPerformaceMode2 R"(.\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"  //QuietMode
+#define SetPerformaceMode0 R"(.\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-0)"  //GameMode
+//TcmdProcess(SetPerformaceMode2);
+//TcmdProcess(SetPerformaceMode0);
+
 //ö��״̬ģʽ
 enum WMISystemPerMode :unsigned char {
     GameMode = 0,

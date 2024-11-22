@@ -127,6 +127,5 @@ private:
 	CFont m_bFont;
 };
 
-void TcmdProcess(std::string cmdLine);
 
 CString VectorToCString(const std::vector<int>& vec);
