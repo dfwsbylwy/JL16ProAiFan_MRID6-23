@@ -212,7 +212,7 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 	if (isJL16Pro()) {
 		{
 			//初始化为游戏模式
-			//TcmdProcess(SetPerformaceMode0);
+			TcmdProcess(SetPerformaceMode0);
 			CFanControl::FCEC.writeByte(ModeAddress, GameMode);
 
 			// 初始化颜色按钮的键盘灯颜色
@@ -637,11 +637,18 @@ LRESULT CJL16ProAiFanDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		case PBT_APMRESUMEAUTOMATIC: //睡眠、休眠恢复
 		{
 			//OnExit();
-			TcmdProcess(SetPerformaceMode0);
-			CFanControl::FCEC.writeByte(ModeAddress, GameMode);
-			CFanControl::m_ModeSet = GameMode;
 			std::this_thread::sleep_for(std::chrono::milliseconds(3500));
+
 			CFC.UpdateFanSpeed(); //重新更新风扇转速
+			if (CFanControl::m_CPUFanSpeed < 1900 || CFanControl::m_GPUFanSpeed < 1900)
+			{
+				TcmdProcess(SetPerformaceMode0);
+				CFanControl::FCEC.writeByte(ModeAddress, GameMode);
+				CFanControl::m_ModeSet = GameMode;
+				std::this_thread::sleep_for(std::chrono::milliseconds(3500));
+				CFC.UpdateFanSpeed(); //重新更新风扇转速
+			}
+
 		}
 		break;
 		}
