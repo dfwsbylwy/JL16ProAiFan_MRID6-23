@@ -10,37 +10,30 @@
 #include <chrono>
 
 
-//#define SetPerformaceMode2 R"(sudo run .\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"
-#define SetPerformaceMode2 R"(.\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-2)"  //QuietMode
-#define SetPerformaceMode0 R"(.\JiaoLongWMI.exe PerformaceMode-SetPerformaceMode-0)"  //GameMode
-//TcmdProcess(SetPerformaceMode2);
-//TcmdProcess(SetPerformaceMode0);
-
 
 //using namespace std;
 //静态成员初始化值
 EmbeddedController CFanControl::FCEC = EmbeddedController();
 
-short int CFanControl::m_CPUTemp = -1;
-short int CFanControl::m_GPUTemp = -1;
-short int CFanControl::m_MaxTemp = -1;
+unsigned short int CFanControl::m_CPUTemp = 0;
+unsigned short int CFanControl::m_GPUTemp = 0;
+unsigned short int CFanControl::m_MaxTemp = 0;
 
-short int CFanControl::m_CPUFanSpeed = -1;
-short int CFanControl::m_GPUFanSpeed = -1;
-bool CFanControl::m_FanSpeedZero = FALSE;
-bool CFanControl::m_FanSetStatus = TRUE;
+unsigned short int CFanControl::m_CPUFanSpeed = 0;
+unsigned short int CFanControl::m_GPUFanSpeed = 0;
+bool CFanControl::m_FanSpeedZero = TRUE;
+bool CFanControl::m_FanSetStatus = FALSE;
 bool CFanControl::m_isMRID6_23 = FALSE;
-short int CFanControl::m_MaxFanSpeedSet = -1;
-short int CFanControl::m_ModeSet = -1;
+bool CFanControl::m_JiaoLongWMIexeisOK = FALSE;
+unsigned short int CFanControl::m_MaxFanSpeedSet = 25;
+unsigned short int CFanControl::m_ModeSet = GameMode;
 
 
-unsigned short int CFanControl::m_Steps = 1;
+unsigned short int CFanControl::m_Steps = 0;
 
-std::vector<std::vector<short int>> CFanControl::m_TempSpeedTable = {{70,22}, {78,24}, {84,26}, {88,28}, {90,30}, {93,35}, {97,42},{100,49}};
+std::vector<std::vector<unsigned short int>> CFanControl::m_TempSpeedTable = {{70,22}, {78,24}, {84,26}, {88,28}, {90,30}, {93,35}, {97,42},{100,49}};
 
-std::map<short int, short int> CFanControl::m_FanSpeedCache;
-
-
+std::map<unsigned short int, unsigned short int> CFanControl::m_FanSpeedCache;
 
 
     //构造函数，使用成员初始化列表初始化成员变量
@@ -50,7 +43,7 @@ CFanControl::CFanControl( )
 }
 
 
-void CFanControl::TempSpeedTableSet(std::vector<std::vector<short int>> vTempSpeedTable)
+void CFanControl::TempSpeedTableSet(std::vector<std::vector<unsigned short int>> vTempSpeedTable)
 {
     if (vTempSpeedTable.size() < 2 || vTempSpeedTable[0].size() != 2)
         CFanControl::m_TempSpeedTable = vTempSpeedTable;
@@ -60,14 +53,13 @@ void CFanControl::TempSpeedTableSet(std::vector<std::vector<short int>> vTempSpe
 
 
 //根据给定的温度-转速表和目标温度，返回插值计算的风扇转速
-short int CFanControl::InterpolateFanSpeed( ) {
+unsigned short int CFanControl::InterpolateFanSpeed( ) {
 
     // 检查缓存中是否已经有对应温度的结果
     auto cacheIt = m_FanSpeedCache.find(CFanControl::m_MaxTemp);
     if (cacheIt != m_FanSpeedCache.end()) {
         return cacheIt->second; // 返回缓存中的结果
     }
-
 
     // 获取温度-转速表的行数
     short int rows = CFanControl::m_TempSpeedTable.size();
@@ -88,15 +80,15 @@ short int CFanControl::InterpolateFanSpeed( ) {
     else if (indexLow == rows - 1) indexLow = rows - 2; // 如果查询温度大于最高温度，使用最后两个点
 
     // 根据索引获取两个相邻温度点的坐标(x,y)即(温度, 转速)
-    short int x1 = CFanControl::m_TempSpeedTable[indexLow][0];
-    short int y1 = CFanControl::m_TempSpeedTable[indexLow][1];
-    short int x2 = CFanControl::m_TempSpeedTable[indexLow + 1][0];
-    short int y2 = CFanControl::m_TempSpeedTable[indexLow + 1][1];
+    unsigned short int x1 = CFanControl::m_TempSpeedTable[indexLow][0];
+    unsigned short int y1 = CFanControl::m_TempSpeedTable[indexLow][1];
+    unsigned short int x2 = CFanControl::m_TempSpeedTable[indexLow + 1][0];
+    unsigned short int y2 = CFanControl::m_TempSpeedTable[indexLow + 1][1];
 
     // 计算线性插值斜率
     double slope = static_cast<double>(y2 - y1) / (x2 - x1);
     // 根据斜率和查询温度计算插值的风扇转速
-    short int interpolatedSpeed = y1 + round(slope * (CFanControl::m_MaxTemp - x1));
+    unsigned short int interpolatedSpeed = y1 + round(slope * (CFanControl::m_MaxTemp - x1));
 
 
     // 应用边界限制
@@ -128,31 +120,48 @@ void CFanControl::UpdateTemp()
 }
 
 
-void CFanControl::CheckFanSpeedZero( )
+void CFanControl::FanSpeedNoZero( )
 {
-    //两次风扇速度读取为0，则强制初始化模式为游戏模式，否则更新风扇转速。
-    //if (CFanControl::m_CPUFanSpeed == 0 && CFanControl::m_GPUFanSpeed == 0)
-    if (CFanControl::m_CPUFanSpeed < 1900 || CFanControl::m_GPUFanSpeed < 1900)
+    if (CFanControl::m_CPUFanSpeed < 1500 && CFanControl::m_GPUFanSpeed < 1500)
     {
-        if (CFanControl::m_FanSpeedZero && CFanControl::m_MaxTemp >= 70)
+        if (CFanControl::m_MaxTemp >= 50)
         {
-            TcmdProcess(SetPerformaceMode0);
+            TcmdProcess(SetPerformaceMode0, FALSE, CFanControl::m_JiaoLongWMIexeisOK);
             CFanControl::FCEC.writeByte(ModeAddress, GameMode);
             CFanControl::m_ModeSet = GameMode;
-            std::this_thread::sleep_for(std::chrono::milliseconds(700));
-            CFanControl::m_FanSpeedZero = FALSE;
-
-
         }
-        //CFanControl::UpdateFanSpeed(); //更新风扇转速
-        CFanControl::m_FanSpeedZero = TRUE;
     }
-    else
+    else if (CFanControl::m_CPUFanSpeed > 1500 && CFanControl::m_GPUFanSpeed > 1500)
     {
-
         CFanControl::m_FanSpeedZero = FALSE;
+        if (!CFanControl::m_FanSetStatus)
+        {
+            FixedMaxFanSpeed2Mode();
+        }
     }
+}
 
+void CFanControl::FixedMaxFanSpeed2Mode()
+{
+
+    if (!CFanControl::m_FanSetStatus) {
+
+        if (CFanControl::m_MaxFanSpeedSet < 35)
+        {
+            if (CFanControl::FCEC.writeByte(ModeAddress, DiyMode))
+                CFanControl::m_ModeSet = DiyMode;
+        }
+        else if (CFanControl::m_MaxFanSpeedSet < 50)
+        {
+            if (CFanControl::FCEC.writeByte(ModeAddress, GameMode))
+                CFanControl::m_ModeSet = GameMode;
+        }
+        else if (CFanControl::m_MaxFanSpeedSet <= 58)
+        {
+            if (CFanControl::FCEC.writeByte(ModeAddress, PerformanceMode))
+                CFanControl::m_ModeSet = PerformanceMode;
+        }
+    }
 }
 
 
@@ -177,19 +186,20 @@ void CFanControl::UpdateMode()
     short int ReadModeSet = CFanControl::FCEC.readByte(ModeAddress);
 
     // Mode update
-    if (ReadModeSet >=0 && CFanControl::m_ModeSet != ReadModeSet)
+    if ((ReadModeSet >= 0 && ReadModeSet <= 2) || ReadModeSet == 255)
+    {
         CFanControl::m_ModeSet = ReadModeSet;
+    }
 }
 
 
 void CFanControl::SetMaxFanSpeed(bool & UIUpdateFlag)
 {
-    UpdateMode();
 
     if (CFanControl::m_FanSetStatus)
     {
         // MaxFanSpeed set
-        short int MaxFanSpeedValue = InterpolateFanSpeed();
+        unsigned short int MaxFanSpeedValue = InterpolateFanSpeed();
         if (CFanControl::m_MaxFanSpeedSet != MaxFanSpeedValue)
         {
             if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, MaxFanSpeedValue))
@@ -203,6 +213,7 @@ void CFanControl::SetMaxFanSpeed(bool & UIUpdateFlag)
                 if (MaxFanSpeedValue <= 35)
                 {
                     CFanControl::FCEC.writeByte(ModeAddress, DiyMode);
+                    CFanControl::m_ModeSet = DiyMode;
                 }
                 break;
             }
@@ -210,10 +221,12 @@ void CFanControl::SetMaxFanSpeed(bool & UIUpdateFlag)
                 if (MaxFanSpeedValue <= 35)
                 {
                     CFanControl::FCEC.writeByte(ModeAddress, DiyMode);
+                    CFanControl::m_ModeSet = DiyMode;
                 }
                 else
                 {
                     CFanControl::FCEC.writeByte(ModeAddress, GameMode);
+                    CFanControl::m_ModeSet = GameMode;
                 }
                 break;
             }
@@ -221,17 +234,18 @@ void CFanControl::SetMaxFanSpeed(bool & UIUpdateFlag)
                 //cout << "监测到QuietMode,初始化Mode参数，解锁GPU功耗和FanSpeed限制\n";
                 if (CFanControl::FCEC.writeByte(ModeAddress, GameMode)) // QuietMode必须先进入GameMode，初始化解锁GPU功耗墙；
                 {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(700));
+                    CFanControl::m_ModeSet = GameMode;
+                    //std::this_thread::sleep_for(std::chrono::milliseconds(700));
                     //std::this_thread::sleep_for(std::chrono::milliseconds(210));
                     //CFanControl::FCEC.writeByte(ModeAddress, DiyMode);
                 }
                 break;
             }
-
             case DiyMode: {
                 if (MaxFanSpeedValue > 35)
                 {
                     CFanControl::FCEC.writeByte(ModeAddress, GameMode);
+                    CFanControl::m_ModeSet = GameMode;
                 }
                 break;
             }
@@ -239,6 +253,7 @@ void CFanControl::SetMaxFanSpeed(bool & UIUpdateFlag)
                 if (MaxFanSpeedValue > 35)
                 {
                     CFanControl::FCEC.writeByte(ModeAddress, GameMode);
+                    CFanControl::m_ModeSet = GameMode;
                 }
                 break;
             }
@@ -246,12 +261,14 @@ void CFanControl::SetMaxFanSpeed(bool & UIUpdateFlag)
 
     }
     else if( UIUpdateFlag ){
-
-        // MaxFanSpeed update
-        short int ReadMaxFanSpeedValue = CFanControl::FCEC.readByte(MaxFanSpeedAddress);
-        if (CFanControl::m_MaxFanSpeedSet != ReadMaxFanSpeedValue && ReadMaxFanSpeedValue >= 22 && ReadMaxFanSpeedValue <= 58)
+        if (CFanControl::m_Steps % 10 == 0)
         {
-            CFanControl::m_MaxFanSpeedSet = ReadMaxFanSpeedValue;
+            // MaxFanSpeed update
+            unsigned short int ReadMaxFanSpeedValue = CFanControl::FCEC.readByte(MaxFanSpeedAddress);
+            if (CFanControl::m_MaxFanSpeedSet != ReadMaxFanSpeedValue && ReadMaxFanSpeedValue >= 22 && ReadMaxFanSpeedValue <= 58)
+            {
+                CFanControl::m_MaxFanSpeedSet = ReadMaxFanSpeedValue;
+            }
         }
 
     }

@@ -7,6 +7,9 @@
 #include "ryzenadj.h"
 #include <regex>
 
+
+
+
 // CJL16ProAiFanDlg 对话框
 class CJL16ProAiFanDlg : public CDialogEx
 {
@@ -53,7 +56,8 @@ public:
 
 	void PopulateListControl();
 
-	static UINT CloseMainWM(LPVOID pParam);  // 异步启用线程3.5s后关闭主窗口，仅接受1个参数
+	static UINT DelayTask(LPVOID pParam);  // 异步启用线程3.5s后关闭主窗口，仅接受1个参数
+
 
 
 	CProgressCtrl m_ProgressCtrl_CPUTemp;
@@ -86,15 +90,22 @@ public:
 	CSliderCtrl m_SLIDER_MemoryClockOffset;
 	// m_SLIDER_TimerAiFanControl
 	CSliderCtrl m_SLIDER_TimerAiFanControl;
+	// m_SLIDER_MaxFanSpeedSet
+	CSliderCtrl m_SLIDER_MaxFanSpeedSet;
+
+
 
 	int m_GpuMaxClock;
 	int m_CoreClockOffset;
 	int m_MemoryClockOffset;
 	int m_TimerAiFanControl;
 
+
 	afx_msg void OnBnClickedCheckAutorun();
 
 	int ReadRTXMaxPwr();
+
+	bool FileExists(const std::string& filePath);
 
 	// m_SLIDER_CpuMaxTemp
 	CSliderCtrl m_SLIDER_CpuMaxTemp;

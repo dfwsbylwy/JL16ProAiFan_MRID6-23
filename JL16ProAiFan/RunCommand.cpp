@@ -13,6 +13,8 @@
 // 函数执行成功返回1，失败返回0
 #pragma warning(disable:4996)
 
+
+
 std::string cmdPopen(const std::string& cmd) {
     char buffer[128]; //定义缓冲区
     FILE* pipe = _popen(cmd.c_str(), "r"); //打开管道，并执行命令
@@ -94,8 +96,26 @@ std::string cmdProcess(const std::string& cmdLine) {
 }
 
 
-void TcmdProcess(std::string cmdLine) {
-	std::string sss = cmdLine;
-	std::thread TcmdProcess(cmdProcess, sss);
-	TcmdProcess.detach();
+void TcmdProcess(std::string cmdLine, bool join = TRUE, bool JiaoLongWMIexeisOK = FALSE) {
+	
+	if (JiaoLongWMIexeisOK) {
+
+		std::string sss = cmdLine;
+
+		// 使用智能指针或资源管理避免内存泄漏
+		std::thread t(cmdProcess, cmdLine);
+
+		if (join) {
+			if (t.joinable()) {
+				t.join();
+			}
+		}
+		else {
+			if (t.joinable()) {
+				t.detach();
+			}
+		}
+
+	}
+
 }

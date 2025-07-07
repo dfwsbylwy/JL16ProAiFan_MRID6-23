@@ -15,6 +15,9 @@
 #include <format>
 #include <atlstr.h>
 #include "BoardProduct.h"
+#include <windows.h>
+#include <string>
+
 
 
 #ifdef _DEBUG
@@ -33,9 +36,6 @@
 
 
 #define JL16ProAiFanINI iniPatn
-//#define SwitchMaxFanSpeed1 R"(sudo run  .\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1)"
-#define SwitchMaxFanSpeed1 R"(.\JiaoLongWMI.exe Fan-SwitchMaxFanSpeed-1)"
-//TcmdProcess(SwitchMaxFanSpeed1);
 
 
 // 定义一个函数将std::vector<int>转换为CString
@@ -97,6 +97,7 @@ CJL16ProAiFanDlg* CJL16ProAiFanDlg::pActiveInstance = nullptr;
 CFanControl CJL16ProAiFanDlg::CFC = CFanControl();
 bool CJL16ProAiFanDlg::UIUpdateFlag = true;
 
+
 CJL16ProAiFanDlg::CJL16ProAiFanDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_JL16PROAIFAN_DIALOG, pParent)
 {
@@ -108,7 +109,6 @@ CJL16ProAiFanDlg::CJL16ProAiFanDlg(CWnd* pParent /*=nullptr*/)
 	m_CoreClockOffset = 0;
 	m_MemoryClockOffset = 0;
 	m_TimerAiFanControl = 1000;
-
 	//m_nid = NULL;
 }
 
@@ -128,6 +128,7 @@ void CJL16ProAiFanDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_SLIDER_CoreClockOffset, m_SLIDER_CoreClockOffset);
 	DDX_Control(pDX, IDC_SLIDER_MemoryClockOffset, m_SLIDER_MemoryClockOffset);
 	DDX_Control(pDX, IDC_SLIDER_TimerAiFanControl, m_SLIDER_TimerAiFanControl);
+	DDX_Control(pDX, IDC_SLIDER_MaxFanSpeedSet, m_SLIDER_MaxFanSpeedSet);
 	DDX_Control(pDX, IDC_SLIDER_CpuMaxTemp, m_SLIDER_CpuMaxTemp);
 	DDX_Control(pDX, IDC_SLIDER_CPUFastPPT, m_SLIDER_CPUFastPPT);
 	DDX_Control(pDX, IDC_SLIDER_CPUTDC, m_SLIDER_CPUTDC);
@@ -211,8 +212,12 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 	//检查主板是否为蛟龙16Pro，并按返回值选择分支。
 	if (isJL16Pro()) {
 		{
-			//初始化为游戏模式
-			TcmdProcess(SetPerformaceMode0);
+
+			CFanControl::m_JiaoLongWMIexeisOK = FileExists(".\\JiaoLongWMI.exe");
+
+			TcmdProcess(SwitchMaxFanSpeed1, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
+
+			TcmdProcess(SetPerformaceMode0, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 			CFanControl::FCEC.writeByte(ModeAddress, GameMode);
 
 			// 初始化颜色按钮的键盘灯颜色
@@ -230,6 +235,7 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 				m_CMFCColorButton_KeyLight.SetColor(RGB(r, g, b));
 			}
 
+
 			// 初始化m_FanSetStatus
 			GetPrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), szValue, _countof(szValue), JL16ProAiFanINI);
 
@@ -242,7 +248,23 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			{
 				CFanControl::m_FanSetStatus = FALSE;
 				CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
+
+				unsigned short int MaxFanSpeedSet = GetPrivateProfileInt(_T("config"), _T("m_MaxFanSpeedSet"), 28, JL16ProAiFanINI);
+				if (MaxFanSpeedSet >= 22 && MaxFanSpeedSet <= 58)
+				{
+					CFanControl::m_MaxFanSpeedSet = MaxFanSpeedSet;
+				}
+				CFanControl::FCEC.writeByte(MaxFanSpeedAddress, CFanControl::m_MaxFanSpeedSet);
+				
+				//CFC.FixedMaxFanSpeed2Mode();
 			}
+
+			m_SLIDER_MaxFanSpeedSet.SetRange(22, 58);//设置范围
+			m_SLIDER_MaxFanSpeedSet.SetTicFreq(5);//设置显示刻度的间隔
+			m_SLIDER_MaxFanSpeedSet.SetLineSize(1);//设置行大小
+			m_SLIDER_MaxFanSpeedSet.SetPageSize(5);//设置页大小
+
+			m_SLIDER_MaxFanSpeedSet.SetPos(CFanControl::m_MaxFanSpeedSet);
 
 			// 初始化auto_run
 			GetPrivateProfileString(_T("config"), _T("auto_run"), _T("true"), szValue, _countof(szValue), JL16ProAiFanINI);
@@ -260,6 +282,12 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 
 
 		{
+			m_SLIDER_TimerAiFanControl.SetRange(5, 35);//设置范围
+			m_SLIDER_TimerAiFanControl.SetTicFreq(5);//设置显示刻度的间隔
+			m_SLIDER_TimerAiFanControl.SetLineSize(1);//设置行大小
+			m_SLIDER_TimerAiFanControl.SetPageSize(5);//设置页大小
+
+
 			m_SLIDER_GpuMaxClock.SetRange(1155, 2100);//设置范围
 			m_SLIDER_GpuMaxClock.SetTicFreq(15);//设置显示刻度的间隔
 			m_SLIDER_GpuMaxClock.SetLineSize(15);//设置行大小
@@ -275,23 +303,16 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			m_SLIDER_MemoryClockOffset.SetLineSize(1);//设置行大小
 			m_SLIDER_MemoryClockOffset.SetPageSize(10);//设置页大小
 
-			m_SLIDER_TimerAiFanControl.SetRange(5, 35);//设置范围
-			m_SLIDER_TimerAiFanControl.SetTicFreq(5);//设置显示刻度的间隔
-			m_SLIDER_TimerAiFanControl.SetLineSize(1);//设置行大小
-			m_SLIDER_TimerAiFanControl.SetPageSize(5);//设置页大小
-
 
 			m_SLIDER_CpuMaxTemp.SetRange(80, 100);//设置范围
 			m_SLIDER_CpuMaxTemp.SetTicFreq(5);//设置显示刻度的间隔
 			m_SLIDER_CpuMaxTemp.SetLineSize(1);//设置行大小
 			m_SLIDER_CpuMaxTemp.SetPageSize(5);//设置页大小
 
-
 			m_SLIDER_CPUFastPPT.SetRange(25, 120);//设置范围
 			m_SLIDER_CPUFastPPT.SetTicFreq(5);//设置显示刻度的间隔
 			m_SLIDER_CPUFastPPT.SetLineSize(1);//设置行大小
 			m_SLIDER_CPUFastPPT.SetPageSize(5);//设置页大小
-
 
 			m_SLIDER_CPUTDC.SetRange(18, 108);//设置范围
 			m_SLIDER_CPUTDC.SetTicFreq(5);//设置显示刻度的间隔
@@ -330,7 +351,7 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			m_TimerAiFanControl = GetPrivateProfileInt(_T("config"), _T("m_TimerAiFanControl"), 1000, JL16ProAiFanINI);
 			m_SLIDER_TimerAiFanControl.SetPos(m_TimerAiFanControl / 100);//当前停留的位置
 
-			SetTimer(TStartAiFanControl, m_TimerAiFanControl, NULL); //设置AiFan计时器
+
 
 			CString  formattedString;
 			formattedString.Format(_T("%.1f s"), m_TimerAiFanControl / 1000.0); // 保留一位小数
@@ -438,7 +459,8 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			std::thread ryzenadjdoing(ryzenadj2do, std::ref(libryzenadjData));
 			ryzenadjdoing.detach();
 			
-			TcmdProcess(SwitchMaxFanSpeed1);
+			::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
+			//SetTimer(TStartAiFanControl, m_TimerAiFanControl, NULL); //设置AiFan计时器，已改为延迟启动
 		}
 	}
 	else {
@@ -448,13 +470,8 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 
 	}
 
-	//更新界面
-	::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
+	AfxBeginThread(DelayTask, this); // 软件打开后，异步启用线程3.5s后关闭主窗口
 
-
-#ifdef NDEBUG
-	AfxBeginThread(CloseMainWM, this); // 软件打开后，异步启用线程3.5s后关闭主窗口
-#endif
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -637,18 +654,8 @@ LRESULT CJL16ProAiFanDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		case PBT_APMRESUMEAUTOMATIC: //睡眠、休眠恢复
 		{
 			//OnExit();
-			std::this_thread::sleep_for(std::chrono::milliseconds(3500));
 
-			CFC.UpdateFanSpeed(); //重新更新风扇转速
-			if (CFanControl::m_CPUFanSpeed < 1900 || CFanControl::m_GPUFanSpeed < 1900)
-			{
-				TcmdProcess(SetPerformaceMode0);
-				CFanControl::FCEC.writeByte(ModeAddress, GameMode);
-				CFanControl::m_ModeSet = GameMode;
-				std::this_thread::sleep_for(std::chrono::milliseconds(3500));
-				CFC.UpdateFanSpeed(); //重新更新风扇转速
-			}
-
+			CFanControl::m_FanSpeedZero = TRUE;
 		}
 		break;
 		}
@@ -677,17 +684,17 @@ void CJL16ProAiFanDlg::OnRecover()
 	ShowWindow(SW_NORMAL); // 显示主窗口
 	SetForegroundWindow();// 置为前台窗口
 	CJL16ProAiFanDlg::UIUpdateFlag = true;
+	//CFanControl::m_FanSpeedZero = FALSE;
 }
 
 void CJL16ProAiFanDlg::OnExit()
 {
 
-	KillTimer(TStartAiFanControl);
+	//KillTimer(TStartAiFanControl);
 
-	//if (CFanControl::m_FanSetStatus == true && CFanControl::m_ModeSet >= 2)
 	if ( CFanControl::m_ModeSet >= 2)
 	{
-		TcmdProcess(SetPerformaceMode0);
+		//TcmdProcess(SetPerformaceMode0, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 		CFanControl::FCEC.writeByte(ModeAddress, GameMode);//程序退出，强制写回办公mode
 		CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35);
 	}
@@ -708,15 +715,17 @@ LRESULT CJL16ProAiFanDlg::OnUpdateUI(WPARAM wParam, LPARAM lParam)
 	SetDlgItemInt(IDC_STATIC_CPUFanSpeed, CFanControl::m_CPUFanSpeed, FALSE);
 	SetDlgItemInt(IDC_STATIC_GPUFanSpeed, CFanControl::m_GPUFanSpeed, FALSE);
 
+
+	m_SLIDER_MaxFanSpeedSet.SetPos(CFanControl::m_MaxFanSpeedSet);
+
 	m_ProgressCtrl_CPUTemp.SetPos(CFanControl::m_CPUTemp);
 	m_ProgressCtrl_GPUTemp.SetPos(CFanControl::m_GPUTemp);
 	m_ProgressCtrl_CPUFanSpeed.SetPos(CFanControl::m_CPUFanSpeed);
 	m_ProgressCtrl_GPUFanSpeed.SetPos(CFanControl::m_GPUFanSpeed);
 
-	//std::string formatted = std::format("最高温度℃ = {}\n最大转速 *100 = {}\nModeSet = {:X}\nSteps = {}",\
-	//	         CFanControl::m_MaxTemp, CFanControl::m_MaxFanSpeedSet, CFanControl::m_ModeSet, CFanControl::m_Steps);
-	std::string formatted = std::format("{}\n{}\n{:X}\n{}",\
-		         CFanControl::m_MaxTemp, CFanControl::m_MaxFanSpeedSet, CFanControl::m_ModeSet, CFanControl::m_Steps);
+
+	std::string formatted = std::format("{}\n{:X}\n{}\n{}",\
+		         CFanControl::m_Steps, CFanControl::m_ModeSet, CFanControl::m_MaxTemp, CFanControl::m_MaxFanSpeedSet);
 	str = formatted.c_str();
 	SetDlgItemText(IDC_STATIC_FanControlInfo, str);
 
@@ -735,22 +744,33 @@ void CJL16ProAiFanDlg::OnTimer(UINT_PTR nIDEvent)
 		case TStartAiFanControl: // 假设IDT_TIMER1是你为某个特定任务设置的定时器ID
 		{
 			CFC.UpdateTemp();     //更新平台温度
+
+			if (CFanControl::m_Steps % 10 == 0 || CFanControl::m_Steps <= 10)
+			{
+				CFC.UpdateMode();
+			}
+
 			CFC.SetMaxFanSpeed(CJL16ProAiFanDlg::UIUpdateFlag); //更新风扇控制
 
 			if (CJL16ProAiFanDlg::UIUpdateFlag)
 			{
 				CFC.UpdateFanSpeed(); //更新风扇转速
-				CFC.CheckFanSpeedZero();
+
 				::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
+				if (CFanControl::m_FanSpeedZero)
+				{
+					CFC.FanSpeedNoZero();
+				}
 			}
-			else {
-				CFC.CheckFanSpeedZero();
+			else
+			{
 				if (CFanControl::m_FanSpeedZero)
 				{
 					CFC.UpdateFanSpeed(); //更新风扇转速
+
+					CFC.FanSpeedNoZero();
 				}
 			}
-
 
 			CFanControl::m_Steps++;
 
@@ -796,11 +816,14 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode02()
 	CFanControl::m_FanSetStatus = FALSE;
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
-	TcmdProcess(SetPerformaceMode2);
+	//TcmdProcess(SetPerformaceMode2, FALSE, CFanControl::m_JiaoLongWMIexeisOK);
 	CFanControl::FCEC.writeByte(ModeAddress, QuietMode);
 	CFanControl::m_ModeSet = QuietMode;
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
+	{
 		CFanControl::m_MaxFanSpeedSet = 22;
+		WritePrivateProfileString(_T("config"), _T("m_MaxFanSpeedSet"), std::to_wstring(CFanControl::m_MaxFanSpeedSet).c_str(), JL16ProAiFanINI);
+	}
 }
 
 
@@ -809,11 +832,14 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode00()
 	CFanControl::m_FanSetStatus = FALSE;
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_UNCHECKED);
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
-	TcmdProcess(SetPerformaceMode0);
+	//TcmdProcess(SetPerformaceMode0, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 	CFanControl::FCEC.writeByte(ModeAddress, GameMode);
 	CFanControl::m_ModeSet = GameMode;
 	if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35))
+	{
 		CFanControl::m_MaxFanSpeedSet = 35;
+		WritePrivateProfileString(_T("config"), _T("m_MaxFanSpeedSet"), std::to_wstring(CFanControl::m_MaxFanSpeedSet).c_str(), JL16ProAiFanINI);
+	}
 }
 
 
@@ -822,11 +848,10 @@ void CJL16ProAiFanDlg::OnBnClickedBtnAifanreboot()
 	CFanControl::m_FanSetStatus = TRUE;
 	WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), JL16ProAiFanINI);
 	CheckDlgButton(IDC_CHECK_FanSetStatus, BST_CHECKED);
-	CFanControl::m_MaxFanSpeedSet = -1;
-	TcmdProcess(SetPerformaceMode0);
+	TcmdProcess(SetPerformaceMode0, FALSE, CFanControl::m_JiaoLongWMIexeisOK);
 	CFanControl::FCEC.writeByte(ModeAddress, GameMode);
 	CFanControl::m_ModeSet = GameMode;
-	TcmdProcess(SwitchMaxFanSpeed1);
+	TcmdProcess(SwitchMaxFanSpeed1, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 }
 
 
@@ -846,9 +871,7 @@ void CJL16ProAiFanDlg::OnBnClickedCheckFansetstatus()
 			// ((CButton*)GetDlgItem(IDC_CHECK_FanSetStatus))->SetCheck(BST_CHECKED);
 			CFanControl::m_FanSetStatus = TRUE;
 			WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("true"), JL16ProAiFanINI);
-			CFanControl::m_MaxFanSpeedSet = -1;
 
-			TcmdProcess(SwitchMaxFanSpeed1);
 			break;
 		}
 		case BST_UNCHECKED:
@@ -856,18 +879,14 @@ void CJL16ProAiFanDlg::OnBnClickedCheckFansetstatus()
 			// 如果需要在此处处理未选中状态的逻辑，可以添加代码
 			CFanControl::m_FanSetStatus = FALSE;
 			WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
-			TcmdProcess(SetPerformaceMode2);
-			CFanControl::FCEC.writeByte(ModeAddress, QuietMode);//程序退出，强制写回办公mode
-			CFanControl::m_ModeSet = QuietMode;
-			if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
-				CFanControl::m_MaxFanSpeedSet = 22;
+			//if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
+			//CFanControl::m_MaxFanSpeedSet = 22;
 			break;
 		}
 		// BST_INDETERMINATE状态通常不处理，或者根据需要添加处理逻辑
 		default:
 			break;
 	}
-
 
 }
 
@@ -898,7 +917,7 @@ void CJL16ProAiFanDlg::LoadTempSpeedTableFromTXT(LPCTSTR fileName)
 
 		CFanControl::m_TempSpeedTable.clear(); // 清空原有数据
 
-        std::vector<short int> rowData;
+        std::vector<unsigned short int> rowData;
         short int value;
         while (file >> value)
         {
@@ -937,9 +956,9 @@ void CJL16ProAiFanDlg::PopulateListControl()
 	m_CListCtrl_TempSpeedTable.SetExtendedStyle(dwStyle);
 
 
-	m_CListCtrl_TempSpeedTable.InsertColumn(0, _T("序号"), LVCFMT_CENTER, 50);
-	m_CListCtrl_TempSpeedTable.InsertColumn(1, _T("温度"), LVCFMT_CENTER, 50);
-	m_CListCtrl_TempSpeedTable.InsertColumn(2, _T("转速*100"), LVCFMT_CENTER, 80);
+	m_CListCtrl_TempSpeedTable.InsertColumn(0, _T("序号"), LVCFMT_CENTER, 55);
+	m_CListCtrl_TempSpeedTable.InsertColumn(1, _T("温度"), LVCFMT_CENTER, 55);
+	m_CListCtrl_TempSpeedTable.InsertColumn(2, _T("转速*100"), LVCFMT_CENTER, 95);
 
 	//// 假设TempSpeedTable已定义并初始化
 	//std::vector<std::vector< short int>> TempSpeedTable = { {70,22}, {80,24}, {85,26}, {87,28},{89,30},{95,35},{98,42} };
@@ -954,18 +973,40 @@ void CJL16ProAiFanDlg::PopulateListControl()
 	}
 }
 
-UINT CJL16ProAiFanDlg::CloseMainWM(LPVOID pParam)  //软件打开后，异步关闭主窗口
+UINT CJL16ProAiFanDlg::DelayTask(LPVOID pParam)  //软件打开后，异步关闭主窗口
 {
-		// 类型转换回CJL16ProAiFanDlg*
-		CJL16ProAiFanDlg* pDlg = static_cast<CJL16ProAiFanDlg*>(pParam);
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(3500));//软件开启3.5秒后最小化到托盘
-		pDlg->ShowWindow(SW_HIDE);
-		CJL16ProAiFanDlg::UIUpdateFlag = false;
+	// 类型转换回CJL16ProAiFanDlg*
+	CJL16ProAiFanDlg* pDlg = static_cast<CJL16ProAiFanDlg*>(pParam);
 
 
-		return TRUE;
+	while (CFanControl::m_Steps < 3)
+	{// 初始化参数读取
+		CFC.UpdateTemp();
+		CFC.UpdateFanSpeed();
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));//软件开启3.5秒后最小化到托盘
+		//更新界面
+		::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
+		CFanControl::m_Steps++;
+	}
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));//软件开启3.5秒后最小化到托盘
+
+
+	if (!CFanControl::m_FanSetStatus)
+	{
+		CFC.FixedMaxFanSpeed2Mode();
+	}
+
+	pDlg->SetTimer(TStartAiFanControl, pDlg->m_TimerAiFanControl, NULL); //设置AiFan计时器
+
+//#ifdef NDEBUG
+	pDlg->ShowWindow(SW_HIDE);
+	CJL16ProAiFanDlg::UIUpdateFlag = false;
+//#endif
+
+
+	return TRUE;
 }
+
 
 void CJL16ProAiFanDlg::OnBnClickedMfccolorbuttonKeylight()//IDC_MFCCOLORBUTTON_KeyLight
 {
@@ -1095,6 +1136,21 @@ void CJL16ProAiFanDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
 		WritePrivateProfileString(_T("config"), _T("m_TimerAiFanControl"), std::to_wstring(m_TimerAiFanControl).c_str(), JL16ProAiFanINI);
 		break;
 
+	case IDC_SLIDER_MaxFanSpeedSet:
+		if (!CFanControl::m_FanSetStatus)
+		{
+			UpdateData(TRUE);
+			CFanControl::m_MaxFanSpeedSet = m_SLIDER_MaxFanSpeedSet.GetPos();
+			UpdateData(FALSE);
+			if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, CFanControl::m_MaxFanSpeedSet))
+			{
+				WritePrivateProfileString(_T("config"), _T("m_MaxFanSpeedSet"), std::to_wstring(CFanControl::m_MaxFanSpeedSet).c_str(), JL16ProAiFanINI);
+				CFC.FixedMaxFanSpeed2Mode();
+			}
+			
+		}
+		break;
+
 	case IDC_SLIDER_CpuMaxTemp:
 		UpdateData(TRUE);
 		libryzenadjDataTmp = { {libryzenadjTool::set_tctl_temp, m_SLIDER_CpuMaxTemp.GetPos()} };
@@ -1134,9 +1190,6 @@ void CJL16ProAiFanDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
 
 	CDialogEx::OnHScroll(nSBCode, nPos, pScrollBar);
 }
-
-
-
 
 
 void CJL16ProAiFanDlg::OnBnClickedCheckAutorun()
@@ -1186,3 +1239,10 @@ int CJL16ProAiFanDlg::ReadRTXMaxPwr()
 	}
 }
 
+bool CJL16ProAiFanDlg::FileExists(const std::string& filePath)
+{
+	DWORD dwAttrib = GetFileAttributesA(filePath.c_str());
+
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}

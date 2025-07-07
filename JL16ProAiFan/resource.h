@@ -42,6 +42,7 @@
 #define IDC_STATIC_CPUFastPPT           1054
 #define IDC_STATIC_CPUTDC               1055
 #define IDC_STATIC_CPUOffSet            1056
+#define IDC_SLIDER_MaxFanSpeedSet       1057
 
 // Next default values for new objects
 // 
