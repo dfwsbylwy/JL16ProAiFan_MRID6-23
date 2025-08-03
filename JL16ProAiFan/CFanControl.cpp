@@ -9,6 +9,7 @@
 #include <thread>
 #include <chrono>
 
+#define BaseFanSpeed 2100
 
 
 //using namespace std;
@@ -122,16 +123,16 @@ void CFanControl::UpdateTemp()
 
 void CFanControl::FanSpeedNoZero( )
 {
-    if (CFanControl::m_CPUFanSpeed < 1500 && CFanControl::m_GPUFanSpeed < 1500)
+    if (CFanControl::m_CPUFanSpeed < BaseFanSpeed && CFanControl::m_GPUFanSpeed < BaseFanSpeed)
     {
-        if (CFanControl::m_MaxTemp >= 50)
+        if (CFanControl::m_MaxTemp >= 60)
         {
             TcmdProcess(SetPerformaceMode0, FALSE, CFanControl::m_JiaoLongWMIexeisOK);
             CFanControl::FCEC.writeByte(ModeAddress, GameMode);
             CFanControl::m_ModeSet = GameMode;
         }
     }
-    else if (CFanControl::m_CPUFanSpeed > 1500 && CFanControl::m_GPUFanSpeed > 1500)
+    else if (CFanControl::m_CPUFanSpeed >= BaseFanSpeed && CFanControl::m_GPUFanSpeed >= BaseFanSpeed)
     {
         CFanControl::m_FanSpeedZero = FALSE;
         if (!CFanControl::m_FanSetStatus)
