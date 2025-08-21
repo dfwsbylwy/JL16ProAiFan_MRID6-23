@@ -627,6 +627,15 @@ LRESULT CJL16ProAiFanDlg::OnTrayIcon(WPARAM wParam, LPARAM lParam)
 
 LRESULT CJL16ProAiFanDlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
+
+
+	if (message == WM_TASKBARCREATED)
+	{
+
+		Shell_NotifyIcon(NIM_ADD, &m_nid); // 添加托盘图标
+
+	}
+
 	// TODO: Add your specialized code here and/or call the base class
 	switch (message)
 	{

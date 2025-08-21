@@ -8,7 +8,7 @@
 #include <regex>
 
 
-
+static UINT const WM_TASKBARCREATED = RegisterWindowMessage(_T("TaskbarCreated"));
 
 // CJL16ProAiFanDlg 对话框
 class CJL16ProAiFanDlg : public CDialogEx
