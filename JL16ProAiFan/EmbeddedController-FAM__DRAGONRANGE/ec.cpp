@@ -22,10 +22,12 @@ EmbeddedController::EmbeddedController(
     this->timeout = timeout;
 
     this->driver = Driver();
+    this->driverFileExist = driver.driverFileExist;
+
     if (this->driver.initialize())
         this->driverLoaded = TRUE;
 
-    this->driverFileExist = driver.driverFileExist;
+    
 }
 
 VOID EmbeddedController::close()

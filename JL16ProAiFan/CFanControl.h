@@ -67,6 +67,7 @@ public:
     unsigned short int InterpolateFanSpeed();
     void UpdateTemp();
     void UpdateFanSpeed();
+    void UpdateMaxFanSpeedSet();
     void FanSpeedNoZero();
     void FixedMaxFanSpeed2Mode();
     void UpdateMode();

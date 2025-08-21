@@ -184,6 +184,15 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
 		}
 	}
+
+	//检查ec(WinRing0x64.dll/sys)驱动是否加载。
+	if (!CFanControl::FCEC.driverLoaded)
+	{
+		MessageBoxTimeout(NULL, _T("请检查ec(WinRing0x64.dll/sys)驱动未能加载"), _T("JL16ProAiFan"), MB_ICONEXCLAMATION, 0, 2100);
+
+		EndDialog(IDCANCEL);
+	}
+
 	getszDirectory();
 	LoadTempSpeedTableFromTXT(_T("UserTempSpeedTable.txt")); // 假设TXT文件名为NewTempSpeedTable.txt，位于可执行文件同级目录下
 	PopulateListControl();
@@ -352,7 +361,6 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 			m_SLIDER_TimerAiFanControl.SetPos(m_TimerAiFanControl / 100);//当前停留的位置
 
 
-
 			CString  formattedString;
 			formattedString.Format(_T("%.1f s"), m_TimerAiFanControl / 1000.0); // 保留一位小数
 			SetDlgItemText(IDC_STATIC_TimerAiFanControl, formattedString);
@@ -455,19 +463,19 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 				}
 			}
 
+			//::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
+			SetTimer(TStartAiFanControl, m_TimerAiFanControl, NULL); //设置AiFan计时器
+
 			//ryzenadj2do(libryzenadjData);
 			std::thread ryzenadjdoing(ryzenadj2do, std::ref(libryzenadjData));
 			ryzenadjdoing.detach();
 			
-			::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
-			//SetTimer(TStartAiFanControl, m_TimerAiFanControl, NULL); //设置AiFan计时器，已改为延迟启动
 		}
 	}
 	else {
 		MessageBoxTimeout(NULL, _T("Bios信息不含MRID6_23，该机型不是蛟龙16Pro，程序退出！！！\n如果确定为蛟龙16Pro，重试后仍不行，请联系开发者QQ157067422。"), _T("JL16ProAiFan"), MB_ICONEXCLAMATION, 0, 2100);
 	
 		EndDialog(IDCANCEL);
-
 	}
 
 	AfxBeginThread(DelayTask, this); // 软件打开后，异步启用线程3.5s后关闭主窗口
@@ -545,12 +553,6 @@ void CJL16ProAiFanDlg::getszDirectory()
 		CString strszDirectory(szExeFilePath); // 使用构造函数
 		szDirectory = strszDirectory;
 		iniPatn = strszDirectory + _T("JL16ProAiFan.ini");
-		//// 构建 INI 文件的完整路径
-		//TCHAR szIniFile[MAX_PATH];
-		//_tcscpy_s(szIniFile, MAX_PATH, szDirectory);
-		//_tcscat_s(szIniFile, MAX_PATH, _T("JL16ProAiFan.ini"));
-		//iniPatn = reinterpret_cast<LPCWSTR>(szIniFile);
-
 
 	}
 	else {
@@ -690,7 +692,7 @@ void CJL16ProAiFanDlg::OnRecover()
 void CJL16ProAiFanDlg::OnExit()
 {
 
-	//KillTimer(TStartAiFanControl);
+	KillTimer(TStartAiFanControl);
 
 	if ( CFanControl::m_ModeSet >= 2)
 	{
@@ -698,6 +700,8 @@ void CJL16ProAiFanDlg::OnExit()
 		CFanControl::FCEC.writeByte(ModeAddress, GameMode);//程序退出，强制写回办公mode
 		CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35);
 	}
+	CFanControl::FCEC.close();
+
 	EndDialog(IDCANCEL);
 }
 
@@ -737,20 +741,35 @@ LRESULT CJL16ProAiFanDlg::OnUpdateUI(WPARAM wParam, LPARAM lParam)
 
 void CJL16ProAiFanDlg::OnTimer(UINT_PTR nIDEvent)
 {
-
-
 	switch (nIDEvent)
 	{
 		case TStartAiFanControl: // 假设IDT_TIMER1是你为某个特定任务设置的定时器ID
 		{
 			CFC.UpdateTemp();     //更新平台温度
 
+
 			if (CFanControl::m_Steps % 10 == 0 || CFanControl::m_Steps <= 10)
 			{
 				CFC.UpdateMode();
 			}
 
-			CFC.SetMaxFanSpeed(CJL16ProAiFanDlg::UIUpdateFlag); //更新风扇控制
+			if (CFanControl::m_FanSetStatus)
+			{
+				CFC.SetMaxFanSpeed(CJL16ProAiFanDlg::UIUpdateFlag); //更新风扇控制
+			}
+			else
+			{
+				//高温恢复风扇调速控制
+				if (CFanControl::m_MaxTemp >= 93) {
+					CFanControl::m_FanSetStatus = TRUE;
+					CheckDlgButton(IDC_CHECK_FanSetStatus, BST_CHECKED);
+				}
+
+				if (UIUpdateFlag && CFanControl::m_Steps % 10 == 0)
+				{
+					CFC.UpdateMaxFanSpeedSet();
+				}
+			}
 
 			if (CJL16ProAiFanDlg::UIUpdateFlag)
 			{
@@ -767,7 +786,6 @@ void CJL16ProAiFanDlg::OnTimer(UINT_PTR nIDEvent)
 				if (CFanControl::m_FanSpeedZero)
 				{
 					CFC.UpdateFanSpeed(); //更新风扇转速
-
 					CFC.FanSpeedNoZero();
 				}
 			}
@@ -977,30 +995,13 @@ UINT CJL16ProAiFanDlg::DelayTask(LPVOID pParam)  //软件打开后，异步关�
 {
 	// 类型转换回CJL16ProAiFanDlg*
 	CJL16ProAiFanDlg* pDlg = static_cast<CJL16ProAiFanDlg*>(pParam);
+	std::this_thread::sleep_for(std::chrono::milliseconds(3500));//软件开启3.5秒后最小化到托盘
 
-
-	while (CFanControl::m_Steps < 3)
-	{// 初始化参数读取
-		CFC.UpdateTemp();
-		CFC.UpdateFanSpeed();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));//软件开启3.5秒后最小化到托盘
-		//更新界面
-		::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
-		CFanControl::m_Steps++;
-	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));//软件开启3.5秒后最小化到托盘
-
-
-	if (!CFanControl::m_FanSetStatus)
-	{
-		CFC.FixedMaxFanSpeed2Mode();
-	}
-
-	pDlg->SetTimer(TStartAiFanControl, pDlg->m_TimerAiFanControl, NULL); //设置AiFan计时器
 
 //#ifdef NDEBUG
-	pDlg->ShowWindow(SW_HIDE);
-	CJL16ProAiFanDlg::UIUpdateFlag = false;
+	//pDlg->ShowWindow(SW_HIDE);
+	//CJL16ProAiFanDlg::UIUpdateFlag = false;
+	pDlg->OnClose();
 //#endif
 
 
