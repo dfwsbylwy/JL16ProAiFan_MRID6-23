@@ -125,7 +125,7 @@ void CFanControl::FanSpeedNoZero( )
 {
     if (CFanControl::m_CPUFanSpeed < BaseFanSpeed && CFanControl::m_GPUFanSpeed < BaseFanSpeed)
     {
-        if (CFanControl::m_MaxTemp >= 60)
+        if (CFanControl::m_MaxTemp >= 65)
         {
             TcmdProcess(SetPerformaceMode0, FALSE, CFanControl::m_JiaoLongWMIexeisOK);
             CFanControl::FCEC.writeByte(ModeAddress, GameMode);

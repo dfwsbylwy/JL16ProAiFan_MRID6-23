@@ -700,10 +700,9 @@ void CJL16ProAiFanDlg::OnRecover()
 
 void CJL16ProAiFanDlg::OnExit()
 {
-
 	KillTimer(TStartAiFanControl);
 
-	if ( CFanControl::m_ModeSet >= 2)
+	if ( CFanControl::m_ModeSet != GameMode)
 	{
 		//TcmdProcess(SetPerformaceMode0, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 		CFanControl::FCEC.writeByte(ModeAddress, GameMode);//程序退出，强制写回办公mode
