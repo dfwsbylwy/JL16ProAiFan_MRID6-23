@@ -265,7 +265,7 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 				}
 				CFanControl::FCEC.writeByte(MaxFanSpeedAddress, CFanControl::m_MaxFanSpeedSet);
 				
-				//CFC.FixedMaxFanSpeed2Mode();
+				//CFC.FixedMaxFanSpeed2Mode();  在ontime运行
 			}
 
 			m_SLIDER_MaxFanSpeedSet.SetRange(22, 58);//设置范围
@@ -755,48 +755,43 @@ void CJL16ProAiFanDlg::OnTimer(UINT_PTR nIDEvent)
 		{
 			CFC.UpdateTemp();     //更新平台温度
 
+			bool isStepMod10 = (CFanControl::m_Steps % 10 == 0);
 
-			if (CFanControl::m_Steps % 10 == 0 || CFanControl::m_Steps <= 10)
+			if (isStepMod10)
 			{
 				CFC.UpdateMode();
 			}
 
-			if (CFanControl::m_FanSetStatus)
+			if (CFanControl::m_FanSetStatus && !CFanControl::m_FanSpeedZero)
 			{
 				CFC.SetMaxFanSpeed(CJL16ProAiFanDlg::UIUpdateFlag); //更新风扇控制
 			}
-			else
+			else if (!CFanControl::m_FanSetStatus)
 			{
 				//高温恢复风扇调速控制
-				if (CFanControl::m_MaxTemp >= 93) {
+				if (CFanControl::m_MaxTemp >= 93)
+				{
 					CFanControl::m_FanSetStatus = TRUE;
 					CheckDlgButton(IDC_CHECK_FanSetStatus, BST_CHECKED);
 				}
 
-				if (UIUpdateFlag && CFanControl::m_Steps % 10 == 0)
+				if (UIUpdateFlag && isStepMod10)
 				{
 					CFC.UpdateMaxFanSpeedSet();
 				}
 			}
 
-			if (CJL16ProAiFanDlg::UIUpdateFlag)
+			if (CJL16ProAiFanDlg::UIUpdateFlag || CFanControl::m_FanSpeedZero)
 			{
 				CFC.UpdateFanSpeed(); //更新风扇转速
-
 				::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
-				if (CFanControl::m_FanSpeedZero)
-				{
-					CFC.FanSpeedNoZero();
-				}
 			}
-			else
+
+			if (CFanControl::m_FanSpeedZero)
 			{
-				if (CFanControl::m_FanSpeedZero)
-				{
-					CFC.UpdateFanSpeed(); //更新风扇转速
-					CFC.FanSpeedNoZero();
-				}
+				CFC.FanSpeedNoZero();
 			}
+
 
 			CFanControl::m_Steps++;
 
@@ -905,6 +900,19 @@ void CJL16ProAiFanDlg::OnBnClickedCheckFansetstatus()
 			// 如果需要在此处处理未选中状态的逻辑，可以添加代码
 			CFanControl::m_FanSetStatus = FALSE;
 			WritePrivateProfileString(_T("config"), _T("m_FanSetStatus"), _T("false"), JL16ProAiFanINI);
+
+			unsigned short int MaxFanSpeedSet = GetPrivateProfileInt(_T("config"), _T("m_MaxFanSpeedSet"), 28, JL16ProAiFanINI);
+			if (MaxFanSpeedSet >= 22 && MaxFanSpeedSet <= 58)
+			{
+				CFanControl::m_MaxFanSpeedSet = MaxFanSpeedSet;
+				CFanControl::FCEC.writeByte(MaxFanSpeedAddress, CFanControl::m_MaxFanSpeedSet);
+			}
+
+			if (!CFanControl::m_FanSpeedZero)
+			{
+				CFC.FixedMaxFanSpeed2Mode();
+			}
+
 			//if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
 			//CFanControl::m_MaxFanSpeedSet = 22;
 			break;
@@ -1154,7 +1162,11 @@ void CJL16ProAiFanDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
 			if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, CFanControl::m_MaxFanSpeedSet))
 			{
 				WritePrivateProfileString(_T("config"), _T("m_MaxFanSpeedSet"), std::to_wstring(CFanControl::m_MaxFanSpeedSet).c_str(), JL16ProAiFanINI);
-				CFC.FixedMaxFanSpeed2Mode();
+				
+				if (!CFanControl::m_FanSpeedZero)
+				{
+					CFC.FixedMaxFanSpeed2Mode();
+				}
 			}
 			
 		}
