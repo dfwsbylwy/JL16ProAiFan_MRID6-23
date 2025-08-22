@@ -6,14 +6,14 @@
 
 使用资源声明：
 
-https://github.com/Soberia/EmbeddedController  //BIOS核心寄存器读取、写入
+https://github.com/Soberia/EmbeddedController  //BIOS-EC寄存器读取、写入
 
 https://github.com/GaoXanSheng/JiaoLongWMI  //原生API调用
 
-https://github.com/dfwsbylwy/RyzenAdj   //AMD cpu 控制
+https://github.com/FlyGoat/RyzenAdj   //AMD cpu 控制
 
-https://github.com/cheungxiongwei/WMIC  //主板检测，防止其他机型误使用
+https://github.com/cheungxiongwei/WMIC  //主板型号检测，防止其他机型误使用
 
-https://github.com/Demion/nvapioc  //独显降压、最大频率
+https://github.com/Demion/nvapioc  //独显GPU降压、最大频率设置
 
 https://github.com/zhongyang219/TrafficMonitor（/blob/master/TrafficMonitor/auto_start_helper.cpp //开机自启）
