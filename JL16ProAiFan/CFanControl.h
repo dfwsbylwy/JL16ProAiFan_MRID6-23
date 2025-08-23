@@ -37,9 +37,9 @@ public:
     // ±‰¡ø…Í√˜
     static EmbeddedController FCEC;
 
-    static unsigned short int m_CPUTemp;
-    static unsigned short int m_GPUTemp;
-    static unsigned short int m_MaxTemp;
+    static BYTE m_CPUTemp;
+    static BYTE m_GPUTemp;
+    static BYTE m_MaxTemp;
 
     static unsigned short int m_CPUFanSpeed;
     static unsigned short int m_GPUFanSpeed;
@@ -48,9 +48,8 @@ public:
     static bool m_isMRID6_23;
     static bool m_JiaoLongWMIexeisOK;
 
-    static unsigned short int m_MaxFanSpeedSet;
-
-    static unsigned short int m_ModeSet;  //now status
+    static BYTE m_MaxFanSpeedSet;
+    static BYTE m_ModeSet;  //now status
 
     static unsigned short int m_Steps;
 

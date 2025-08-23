@@ -16,9 +16,9 @@
 //静态成员初始化值
 EmbeddedController CFanControl::FCEC = EmbeddedController();
 
-unsigned short int CFanControl::m_CPUTemp = 0;
-unsigned short int CFanControl::m_GPUTemp = 0;
-unsigned short int CFanControl::m_MaxTemp = 60;   //默认60度
+BYTE CFanControl::m_CPUTemp = 0;
+BYTE CFanControl::m_GPUTemp = 0;
+BYTE CFanControl::m_MaxTemp = 60;   //默认60度
 
 unsigned short int CFanControl::m_CPUFanSpeed = 0;
 unsigned short int CFanControl::m_GPUFanSpeed = 0;
@@ -26,8 +26,8 @@ bool CFanControl::m_FanSpeedZero = TRUE;
 bool CFanControl::m_FanSetStatus = FALSE;
 bool CFanControl::m_isMRID6_23 = FALSE;
 bool CFanControl::m_JiaoLongWMIexeisOK = FALSE;
-unsigned short int CFanControl::m_MaxFanSpeedSet = 25;
-unsigned short int CFanControl::m_ModeSet = GameMode;
+BYTE CFanControl::m_MaxFanSpeedSet = 25;
+BYTE CFanControl::m_ModeSet = GameMode;
 
 
 unsigned short int CFanControl::m_Steps = 0;
@@ -103,11 +103,11 @@ unsigned short int CFanControl::InterpolateFanSpeed( ) {
 
 void CFanControl::UpdateTemp()
 {
-    short int ReadCPUTemp = CFanControl::FCEC.readByte(CPUTempAddress);
+    BYTE ReadCPUTemp = CFanControl::FCEC.readByte(CPUTempAddress);
     if (ReadCPUTemp >= 30 && ReadCPUTemp <= 120)
         CFanControl::m_CPUTemp = ReadCPUTemp;
 
-    short int ReadGPUTemp = CFanControl::FCEC.readByte(GPUtempAddress);
+    BYTE ReadGPUTemp = CFanControl::FCEC.readByte(GPUtempAddress);
     if (ReadGPUTemp >= 30 && ReadGPUTemp <= 120)
         CFanControl::m_GPUTemp = ReadGPUTemp;
 
@@ -168,27 +168,26 @@ void CFanControl::FixedMaxFanSpeed2Mode()
 
 void CFanControl::UpdateFanSpeed()
 {
-    short int CPUFanSpeedQ = CFanControl::FCEC.readByte(0x9b);
-    short int CPUFanSpeedH = CFanControl::FCEC.readByte(0x9C);
-    short int GPUFanSpeedQ = CFanControl::FCEC.readByte(0x9d);
-    short int GPUFanSpeedH = CFanControl::FCEC.readByte(0x9e);
-
+    BYTE CPUFanSpeedQ = CFanControl::FCEC.readByte(0x9b);
+    BYTE CPUFanSpeedH = CFanControl::FCEC.readByte(0x9C);
+    BYTE GPUFanSpeedQ = CFanControl::FCEC.readByte(0x9d);
+    BYTE GPUFanSpeedH = CFanControl::FCEC.readByte(0x9e);
 
     //if (CPUFanSpeedQ > 0 && CPUFanSpeedH >= 0)
     //        CFanControl::m_CPUFanSpeed = CPUFanSpeedQ * 255 + CPUFanSpeedH;
     //if (GPUFanSpeedQ > 0 && GPUFanSpeedH >= 0)
     //        CFanControl::m_GPUFanSpeed = GPUFanSpeedQ * 255 + GPUFanSpeedH;
 
-    if (CPUFanSpeedQ > 0 && CPUFanSpeedQ <= 24)
+    if (CPUFanSpeedQ > 2 && CPUFanSpeedQ <= 24)
         CFanControl::m_CPUFanSpeed = (CPUFanSpeedQ << 8) | CPUFanSpeedH;
-    if (GPUFanSpeedQ > 0 && GPUFanSpeedQ <= 24)
+    if (GPUFanSpeedQ > 2 && GPUFanSpeedQ <= 24)
         CFanControl::m_GPUFanSpeed = (GPUFanSpeedQ << 8) | GPUFanSpeedH;
 
 }
 
 void CFanControl::UpdateMaxFanSpeedSet()
 {
-    unsigned short int ReadMaxFanSpeedValue = CFanControl::FCEC.readByte(MaxFanSpeedAddress);
+    BYTE ReadMaxFanSpeedValue = CFanControl::FCEC.readByte(MaxFanSpeedAddress);
     if (CFanControl::m_MaxFanSpeedSet != ReadMaxFanSpeedValue && ReadMaxFanSpeedValue >= 22 && ReadMaxFanSpeedValue <= 58)
     {
         CFanControl::m_MaxFanSpeedSet = ReadMaxFanSpeedValue;
@@ -199,7 +198,7 @@ void CFanControl::UpdateMaxFanSpeedSet()
 void CFanControl::UpdateMode()
 {
 
-    short int ReadModeSet = CFanControl::FCEC.readByte(ModeAddress);
+    BYTE ReadModeSet = CFanControl::FCEC.readByte(ModeAddress);
 
     // Mode update
     if ((ReadModeSet >= 0 && ReadModeSet <= 2) || ReadModeSet == 255)
