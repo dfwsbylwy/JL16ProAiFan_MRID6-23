@@ -127,7 +127,7 @@ void CFanControl::FanSpeedNoZero( )
     {
         if (CFanControl::m_MaxTemp >= 65 && CFanControl::m_ModeSet != GameMode)
         {
-            TcmdProcess(SetPerformaceMode0, FALSE, CFanControl::m_JiaoLongWMIexeisOK);
+            //TcmdProcess(SetPerformaceMode0, FALSE, CFanControl::m_JiaoLongWMIexeisOK);
             CFanControl::FCEC.writeByte(ModeAddress, GameMode);
             CFanControl::m_ModeSet = GameMode;
         }

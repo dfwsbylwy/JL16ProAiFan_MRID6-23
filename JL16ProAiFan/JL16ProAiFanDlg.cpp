@@ -223,10 +223,11 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 		{
 
 			CFanControl::m_JiaoLongWMIexeisOK = FileExists(".\\JiaoLongWMI.exe");
+			TcmdProcess(SetPerformaceMode0, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 
 			TcmdProcess(SwitchMaxFanSpeed1, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 
-			TcmdProcess(SetPerformaceMode0, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
+
 			CFanControl::FCEC.writeByte(ModeAddress, GameMode);
 
 			// 初始化颜色按钮的键盘灯颜色
