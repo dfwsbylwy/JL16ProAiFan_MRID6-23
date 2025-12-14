@@ -28,6 +28,7 @@ std::wstring getBoardProduct()
 	{
 		WMIC w;
 		std::wstring BoardProduct = w.BoardProduct();//主板
+
 		return BoardProduct;
 	}
 	catch (const WMIC_ERROR& e)
@@ -37,16 +38,37 @@ std::wstring getBoardProduct()
 }
 
 
+std::wstring getSMBIOSBIOSVersion()
+{
+
+	try
+	{
+		WMIC w;
+		std::wstring SMBIOSBIOSVersion = w.SMBIOSBIOSVersion();//主板
+
+		return SMBIOSBIOSVersion;
+	}
+	catch (const WMIC_ERROR& e)
+	{
+		//std::cout << e.what() << std::endl;
+	}
+}
+
+
+
 bool isJL16Pro() {
-	std::wstring BoardProduct = L"MRID6-23_V35"; // 假设这是你的BoardProduct值
-	std::wstring searchFor = L"MRID6-23";
+	std::wstring SMBIOSBIOSVersion = L"MRID6_23_V35"; // 假设这是你的SMBIOSBIOSVersion值
+	std::wstring searchForBoardProduct = L"MRID6_23";
+	std::wstring searchForBIOSVersion = L"V31";
 
-	BoardProduct = getBoardProduct();//主板
+	//SMBIOSBIOSVersion = getBoardProduct();//主板bios
+	SMBIOSBIOSVersion = getSMBIOSBIOSVersion();//主板bios
 
-	size_t foundPos = BoardProduct.find(searchFor);
+	size_t foundPos = SMBIOSBIOSVersion.find(searchForBoardProduct);
 	//如果 find 函数返回的不是 std::string::npos，则说明子串存在
 	if (foundPos != std::wstring::npos) {
 		//std::wcout << L"Found \"" << searchFor << L"\" at position: " << foundPos << std::endl;
+
 		return true;
 	}
 	else {

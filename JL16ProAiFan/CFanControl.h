@@ -64,11 +64,11 @@ public:
     CFanControl();
     void TempSpeedTableSet(std::vector<std::vector<unsigned short int>> vTempSpeedTable);
     unsigned short int InterpolateFanSpeed();
-    void UpdateTemp();
+    void UpdateTemp(short int maxup = 10, short int maxdown = -3);
     void UpdateFanSpeed();
     void UpdateMaxFanSpeedSet();
     void FanSpeedNoZero();
     void FixedMaxFanSpeed2Mode();
     void UpdateMode();
-    void SetMaxFanSpeed(bool & UIUpdateFlag);
+    void SetMaxFanSpeed();
 };

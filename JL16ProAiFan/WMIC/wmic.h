@@ -134,6 +134,7 @@ public:
     std::vector<WMIC_Processor> Processor();//cpu处理器
     std::vector<WMIC_NetworkAdapter> NetworkAdapter();//网络适配器
     std::wstring BoardProduct();
+    std::wstring SMBIOSBIOSVersion();
 private:
     IEnumWbemClassObject *ExecQuery(const std::wstring className);
 private:

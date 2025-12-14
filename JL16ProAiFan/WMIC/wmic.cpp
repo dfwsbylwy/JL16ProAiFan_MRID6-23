@@ -758,3 +758,45 @@ std::wstring WMIC::BoardProduct()
 
     return BoardProduct;
 }
+
+std::wstring  WMIC::SMBIOSBIOSVersion()
+{
+    IEnumWbemClassObject* pEnumerator = ExecQuery(L"Win32_BIOS");
+
+    // Step 7:
+    // Get the data from the query in step 6
+
+    IWbemClassObject* pclsObj = NULL;
+    ULONG uReturn = 0;
+
+
+    std::wstring SMBIOSBIOSVersion;//生产厂商
+    while (pEnumerator) {
+        HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
+
+        if (0 == uReturn) {
+            break;
+        }
+
+        VARIANT vtProp;
+
+        // Get the string of the SMBIOSBIOSVersion
+        hr = pclsObj->Get(L"SMBIOSBIOSVersion", 0, &vtProp, 0, 0);
+        if (SUCCEEDED(hr) && (V_VT(&vtProp) == VT_BSTR)) {
+            SMBIOSBIOSVersion = vtProp.bstrVal;
+        }
+        VariantClear(&vtProp);
+
+#ifdef _DEBUG
+        std::wcout.imbue(std::locale("chs"));
+        std::wcout
+            << SMBIOSBIOSVersion << "\t"
+            << std::endl;
+#endif
+
+        pclsObj->Release();
+    }
+    pEnumerator->Release();
+
+    return SMBIOSBIOSVersion;
+}

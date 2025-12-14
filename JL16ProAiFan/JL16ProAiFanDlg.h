@@ -37,6 +37,7 @@ public:
 	HICON m_hTrayIcon; // 托盘图标句柄
 
 	static bool UIUpdateFlag;
+	static bool BIOSVersionNoV31;
 
 
 	afx_msg void OnClose();
@@ -92,7 +93,6 @@ public:
 	CSliderCtrl m_SLIDER_TimerAiFanControl;
 	// m_SLIDER_MaxFanSpeedSet
 	CSliderCtrl m_SLIDER_MaxFanSpeedSet;
-
 
 
 	int m_GpuMaxClock;

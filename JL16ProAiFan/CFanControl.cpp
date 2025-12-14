@@ -25,7 +25,7 @@ unsigned short int CFanControl::m_GPUFanSpeed = 0;
 bool CFanControl::m_FanSpeedZero = TRUE;
 bool CFanControl::m_FanSetStatus = FALSE;
 bool CFanControl::m_isMRID6_23 = FALSE;
-bool CFanControl::m_JiaoLongWMIexeisOK = FALSE;
+bool CFanControl::m_JiaoLongWMIexeisOK = FALSE;  //同时受BIOSVersionNoV31控制
 BYTE CFanControl::m_MaxFanSpeedSet = 25;
 BYTE CFanControl::m_ModeSet = GameMode;
 
@@ -101,7 +101,7 @@ unsigned short int CFanControl::InterpolateFanSpeed( ) {
 }
 
 
-void CFanControl::UpdateTemp()
+void CFanControl::UpdateTemp(short int maxup, short int maxdown)
 {
     BYTE ReadCPUTemp = CFanControl::FCEC.readByte(CPUTempAddress);
     if (ReadCPUTemp >= 30 && ReadCPUTemp <= 120)
@@ -115,7 +115,7 @@ void CFanControl::UpdateTemp()
     // 每次最大温度最多降3度，最多上升10度，防止温度读取错误陡变化;
     short int MaxTempChaDiff = max(CFanControl::m_CPUTemp, CFanControl::m_GPUTemp) - CFanControl::m_MaxTemp;
 
-    MaxTempChaDiff = max(min(MaxTempChaDiff, 10), -3);  // 值限制在-3到10
+    MaxTempChaDiff = max(min(MaxTempChaDiff, maxup), maxdown);  // 值限制在-3到10
     CFanControl::m_MaxTemp = CFanControl::m_MaxTemp + MaxTempChaDiff;
 
 }
@@ -208,7 +208,7 @@ void CFanControl::UpdateMode()
 }
 
 
-void CFanControl::SetMaxFanSpeed(bool & UIUpdateFlag)
+void CFanControl::SetMaxFanSpeed()
 {
     //if (CFanControl::m_Steps % 10 == 0)
     //{

@@ -97,6 +97,9 @@ CJL16ProAiFanDlg* CJL16ProAiFanDlg::pActiveInstance = nullptr;
 CFanControl CJL16ProAiFanDlg::CFC = CFanControl();
 bool CJL16ProAiFanDlg::UIUpdateFlag = true;
 
+//BIOSVersionNoV31版本号V31不具有最大转速控制。
+bool CJL16ProAiFanDlg::BIOSVersionNoV31 = true;
+
 
 CJL16ProAiFanDlg::CJL16ProAiFanDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_JL16PROAIFAN_DIALOG, pParent)
@@ -218,11 +221,26 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 	InitTrayIcon(); // 初始化托盘图标
 
 
-	//检查主板是否为蛟龙16Pro，并按返回值选择分支。
-	if (isJL16Pro()) {
-		{
 
-			CFanControl::m_JiaoLongWMIexeisOK = FileExists(".\\JiaoLongWMI.exe");
+	std::wstring SMBIOSBIOSVersion = L"MRID6_23_V35"; // 假设这是你的SMBIOSBIOSVersion值
+	std::wstring searchForBoardProduct = L"MRID6_23";
+	std::wstring searchForBIOSVersion = L"V31";
+
+	SMBIOSBIOSVersion = getSMBIOSBIOSVersion();//主板bios
+
+	size_t foundPosBoardProduct = SMBIOSBIOSVersion.find(searchForBoardProduct);
+
+	//检查主板是否为蛟龙16Pro，并按返回值选择分支。
+	if (foundPosBoardProduct != std::wstring::npos) {
+	//if (isJL16Pro()) {
+		{
+			size_t foundPosBIOSVersion = SMBIOSBIOSVersion.find(searchForBIOSVersion);
+
+			if (foundPosBIOSVersion != std::wstring::npos) {
+				CJL16ProAiFanDlg::BIOSVersionNoV31 = false;
+				CFanControl::m_JiaoLongWMIexeisOK = FileExists(".\\JiaoLongWMI.exe");
+			}
+
 			TcmdProcess(SetPerformaceMode0, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 
 			TcmdProcess(SwitchMaxFanSpeed1, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
@@ -754,20 +772,28 @@ void CJL16ProAiFanDlg::OnTimer(UINT_PTR nIDEvent)
 	{
 		case TStartAiFanControl: // 假设IDT_TIMER1是你为某个特定任务设置的定时器ID
 		{
-			CFC.UpdateTemp();     //更新平台温度
+
 
 			bool isStepMod10 = (CFanControl::m_Steps % 10 == 0);
 
-			if (isStepMod10)
+			if (CFanControl::m_FanSetStatus || UIUpdateFlag)
 			{
-				CFC.UpdateMode();
+				CFC.UpdateTemp();     //更新平台温度
+				if (isStepMod10)
+				{
+					CFC.UpdateMode();
+				}
+			}
+			else if (isStepMod10)
+			{
+				CFC.UpdateTemp(35,-10);     //更新平台温度,
 			}
 
 			if (CFanControl::m_FanSetStatus && !CFanControl::m_FanSpeedZero)
 			{
-				CFC.SetMaxFanSpeed(CJL16ProAiFanDlg::UIUpdateFlag); //更新风扇控制
+				CFC.SetMaxFanSpeed(); //更新风扇控制
 			}
-			else if (!CFanControl::m_FanSetStatus)
+			else if (CJL16ProAiFanDlg::BIOSVersionNoV31 && !CFanControl::m_FanSetStatus )
 			{
 				//高温恢复风扇调速控制
 				if (CFanControl::m_MaxTemp >= 93)
@@ -776,7 +802,7 @@ void CJL16ProAiFanDlg::OnTimer(UINT_PTR nIDEvent)
 					CheckDlgButton(IDC_CHECK_FanSetStatus, BST_CHECKED);
 				}
 
-				if (UIUpdateFlag && isStepMod10)
+				if (UIUpdateFlag || isStepMod10)
 				{
 					CFC.UpdateMaxFanSpeedSet();
 				}
@@ -786,13 +812,12 @@ void CJL16ProAiFanDlg::OnTimer(UINT_PTR nIDEvent)
 			{
 				CFC.UpdateFanSpeed(); //更新风扇转速
 				::PostMessage(*CJL16ProAiFanDlg::pActiveInstance, WM_UPDATE_UI, 0, 0);// 发送消息到UI线程
-			}
 
-			if (CFanControl::m_FanSpeedZero)
-			{
-				CFC.FanSpeedNoZero();
+				if (CFanControl::m_FanSpeedZero)
+				{
+					CFC.FanSpeedNoZero();
+				}
 			}
-
 
 			CFanControl::m_Steps++;
 
