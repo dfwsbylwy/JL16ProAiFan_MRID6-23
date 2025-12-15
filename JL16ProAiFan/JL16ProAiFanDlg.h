@@ -37,8 +37,6 @@ public:
 	HICON m_hTrayIcon; // 托盘图标句柄
 
 	static bool UIUpdateFlag;
-	static bool BIOSVersionNoV31;
-
 
 	afx_msg void OnClose();
 	void OnRecover();

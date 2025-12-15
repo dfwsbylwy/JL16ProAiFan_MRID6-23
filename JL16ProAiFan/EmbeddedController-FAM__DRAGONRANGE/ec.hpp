@@ -35,6 +35,8 @@ public:
     BOOL driverLoaded = FALSE;
     BOOL driverFileExist = FALSE;
 
+
+    //======================================== PM channel ==============================================
     /**
      * @param scPort Embedded Controller Status/Command port.
      * @param dataPort Embedded Controller Data port.
@@ -76,21 +78,6 @@ public:
     short int readByte(BYTE bRegister);
 
     /**
-     * Read EC register as WORD.
-     * @param bRegister Address of register.
-     * @return Value of register.
-     */
-
-    WORD readWord(BYTE bRegister);
-
-    /**
-     * Read EC register as DWORD.
-     * @param bRegister Address of register.
-     * @return Value of register.
-     */
-    DWORD readDword(BYTE bRegister);
-
-    /**
      * Write EC register as BYTE.
      * @param bRegister Address of register.
      * @param value Value of register.
@@ -98,21 +85,33 @@ public:
      */
     BOOL writeByte(BYTE bRegister, BYTE value);
 
-    /**
-     * Write EC register as WORD.
-     * @param bRegister Address of register.
-     * @param value Value of register.
-     * @return Successfulness of operation.
-     */
-    BOOL writeWord(BYTE bRegister, WORD value);
 
-    /**
-     * Write EC register as DWORD.
-     * @param bRegister Address of register.
-     * @param value Value of register.
-     * @return Successfulness of operation.
-     */
-    BOOL writeDword(BYTE bRegister, DWORD value);
+    //=======================================EC Direct Access interface=================================
+    //Port Config:
+    //  BADRSEL(0x200A) bit1-0  Addr    Data
+    //                  00      2Eh     2Fh
+    //                  01      4Eh     4Fh
+    //
+    //              01      4Eh     4Fh
+    //  ITE-EC Ram Read/Write Algorithm:
+    //  Addr    w   0x2E
+    //  Data    w   0x11
+    //  Addr    w   0x2F
+    //  Data    w   high byte
+    //  Addr    w   0x2E
+    //  Data    w   0x10
+    //  Addr    w   0x2F
+    //  Data    w   low byte
+    //  Addr    w   0x2E
+    //  Data    w   0x12
+    //  Addr    w   0x2F
+    //  Data    rw  value
+    void EC_init();
+
+    void DirectECWrite(uint16_t Addr, BYTE data, BYTE EC_ADDR_PORT = 0x4e, BYTE EC_DATA_PORT = 0x4f);
+
+
+    BYTE DirectECRead(uint16_t Addr, BYTE EC_ADDR_PORT = 0x4e, BYTE EC_DATA_PORT = 0x4f);
 
 protected:
     UINT16 retry;

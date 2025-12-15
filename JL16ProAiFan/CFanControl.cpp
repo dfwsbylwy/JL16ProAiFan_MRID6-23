@@ -9,7 +9,8 @@
 #include <thread>
 #include <chrono>
 
-#define BaseFanSpeed 2100
+//#define BaseFanSpeed 2100
+#define BaseFanSpeed 1000
 
 
 //using namespace std;
@@ -26,6 +27,8 @@ bool CFanControl::m_FanSpeedZero = TRUE;
 bool CFanControl::m_FanSetStatus = FALSE;
 bool CFanControl::m_isMRID6_23 = FALSE;
 bool CFanControl::m_JiaoLongWMIexeisOK = FALSE;  //同时受BIOSVersionNoV31控制
+//BIOSVersionV31版本号V31不具有最大转速控制。
+bool CFanControl::BIOSVersionNoV31 = true;
 BYTE CFanControl::m_MaxFanSpeedSet = 25;
 BYTE CFanControl::m_ModeSet = GameMode;
 
@@ -93,7 +96,7 @@ unsigned short int CFanControl::InterpolateFanSpeed( ) {
 
 
     // 应用边界限制
-    interpolatedSpeed = max(min(interpolatedSpeed, 50), 22);
+    interpolatedSpeed = max(min(interpolatedSpeed, FanSpeedSetHigh), FanSpeedSetLow);
     // 计算得到插值结果后，将其存储在缓存中
     m_FanSpeedCache[CFanControl::m_MaxTemp] = interpolatedSpeed;
 
@@ -101,22 +104,27 @@ unsigned short int CFanControl::InterpolateFanSpeed( ) {
 }
 
 
-void CFanControl::UpdateTemp(short int maxup, short int maxdown)
+//void CFanControl::UpdateTemp(short int maxup, short int maxdown)
+void CFanControl::UpdateTemp()
 {
-    BYTE ReadCPUTemp = CFanControl::FCEC.readByte(CPUTempAddress);
-    if (ReadCPUTemp >= 30 && ReadCPUTemp <= 120)
-        CFanControl::m_CPUTemp = ReadCPUTemp;
+    //BYTE ReadCPUTemp = CFanControl::FCEC.readByte(CPUTempAddress);
+    //if (ReadCPUTemp >= 30 && ReadCPUTemp <= 120)
+    //    CFanControl::m_CPUTemp = ReadCPUTemp;
 
-    BYTE ReadGPUTemp = CFanControl::FCEC.readByte(GPUtempAddress);
-    if (ReadGPUTemp >= 30 && ReadGPUTemp <= 120)
-        CFanControl::m_GPUTemp = ReadGPUTemp;
+    //BYTE ReadGPUTemp = CFanControl::FCEC.readByte(GPUtempAddress);
+    //if (ReadGPUTemp >= 30 && ReadGPUTemp <= 120)
+    //    CFanControl::m_GPUTemp = ReadGPUTemp;
 
+    //    // 每次最大温度最多降3度，最多上升10度，防止温度读取错误陡变化;
+    //short int MaxTempChaDiff = max(CFanControl::m_CPUTemp, CFanControl::m_GPUTemp) - CFanControl::m_MaxTemp;
 
-    // 每次最大温度最多降3度，最多上升10度，防止温度读取错误陡变化;
-    short int MaxTempChaDiff = max(CFanControl::m_CPUTemp, CFanControl::m_GPUTemp) - CFanControl::m_MaxTemp;
+    //MaxTempChaDiff = max(min(MaxTempChaDiff, maxup), maxdown);  // 值限制在-3到10
+    //CFanControl::m_MaxTemp = CFanControl::m_MaxTemp + MaxTempChaDiff;
 
-    MaxTempChaDiff = max(min(MaxTempChaDiff, maxup), maxdown);  // 值限制在-3到10
-    CFanControl::m_MaxTemp = CFanControl::m_MaxTemp + MaxTempChaDiff;
+    CFanControl::m_CPUTemp = CFanControl::FCEC.DirectECRead(DTS_CPU);
+    CFanControl::m_GPUTemp = CFanControl::FCEC.DirectECRead(DTS_GPU);
+
+    CFanControl::m_MaxTemp = max(CFanControl::m_CPUTemp, CFanControl::m_GPUTemp);
 
 }
 
@@ -135,7 +143,7 @@ void CFanControl::FanSpeedNoZero( )
     else if (CFanControl::m_CPUFanSpeed >= BaseFanSpeed && CFanControl::m_GPUFanSpeed >= BaseFanSpeed)
     {
         CFanControl::m_FanSpeedZero = FALSE;
-        if (!CFanControl::m_FanSetStatus)
+        if (!CFanControl::m_FanSetStatus && CFanControl::m_MaxFanSpeedSet != 0)
         {
             FixedMaxFanSpeed2Mode();
         }
@@ -144,54 +152,71 @@ void CFanControl::FanSpeedNoZero( )
 
 void CFanControl::FixedMaxFanSpeed2Mode()
 {
+    BYTE current = CFanControl::m_ModeSet;
+    BYTE target = current;
 
-    //if (!CFanControl::m_FanSetStatus) {
-    //}
-    if (CFanControl::m_MaxFanSpeedSet < 35)
-    {
-        if (CFanControl::FCEC.writeByte(ModeAddress, DiyMode))
-            CFanControl::m_ModeSet = DiyMode;
+    if (CFanControl::BIOSVersionNoV31)
+    {   //不是V31时
+        if (CFanControl::m_MaxFanSpeedSet < 35)
+        {
+            target = DiyMode;
+        }
+        else if (CFanControl::m_MaxFanSpeedSet < 50)
+        {
+            target = GameMode;
+        }
+        else
+        {
+            target = PerformanceMode;
+        }
     }
-    else if (CFanControl::m_MaxFanSpeedSet < 50)
-    {
-        if (CFanControl::FCEC.writeByte(ModeAddress, GameMode))
-            CFanControl::m_ModeSet = GameMode;
+    else    
+    {   //V31时
+        if (CFanControl::m_MaxFanSpeedSet <= 35)
+        {
+            target = GameMode;
+        }
+        else
+        {
+            target = PerformanceMode;
+        }
+
     }
-    else if (CFanControl::m_MaxFanSpeedSet <= 58)
-    {
-        if (CFanControl::FCEC.writeByte(ModeAddress, PerformanceMode))
-            CFanControl::m_ModeSet = PerformanceMode;
+
+    if (target != current) {
+        CFanControl::FCEC.writeByte(ModeAddress, target);
+        CFanControl::m_ModeSet = target;
     }
-    
+
 }
 
 
 void CFanControl::UpdateFanSpeed()
 {
-    BYTE CPUFanSpeedQ = CFanControl::FCEC.readByte(0x9b);
-    BYTE CPUFanSpeedH = CFanControl::FCEC.readByte(0x9C);
-    BYTE GPUFanSpeedQ = CFanControl::FCEC.readByte(0x9d);
-    BYTE GPUFanSpeedH = CFanControl::FCEC.readByte(0x9e);
+    //BYTE CPUFanSpeedQ = CFanControl::FCEC.readByte(0x9b);
+    //BYTE CPUFanSpeedH = CFanControl::FCEC.readByte(0x9C);
+    //BYTE GPUFanSpeedQ = CFanControl::FCEC.readByte(0x9d);
+    //BYTE GPUFanSpeedH = CFanControl::FCEC.readByte(0x9e);
 
-    //if (CPUFanSpeedQ > 0 && CPUFanSpeedH >= 0)
-    //        CFanControl::m_CPUFanSpeed = CPUFanSpeedQ * 255 + CPUFanSpeedH;
-    //if (GPUFanSpeedQ > 0 && GPUFanSpeedH >= 0)
-    //        CFanControl::m_GPUFanSpeed = GPUFanSpeedQ * 255 + GPUFanSpeedH;
+    //if (CPUFanSpeedQ > 2 && CPUFanSpeedQ <= 24)
+    //    CFanControl::m_CPUFanSpeed = (CPUFanSpeedQ << 8) | CPUFanSpeedH;
+    //if (GPUFanSpeedQ > 2 && GPUFanSpeedQ <= 24)
+    //    CFanControl::m_GPUFanSpeed = (GPUFanSpeedQ << 8) | GPUFanSpeedH;
 
-    if (CPUFanSpeedQ > 2 && CPUFanSpeedQ <= 24)
-        CFanControl::m_CPUFanSpeed = (CPUFanSpeedQ << 8) | CPUFanSpeedH;
-    if (GPUFanSpeedQ > 2 && GPUFanSpeedQ <= 24)
-        CFanControl::m_GPUFanSpeed = (GPUFanSpeedQ << 8) | GPUFanSpeedH;
-
+    CFanControl::m_CPUFanSpeed = CFanControl::FCEC.DirectECRead(FAN1_Current_RPM_high) << 8 | CFanControl::FCEC.DirectECRead(FAN1_Current_RPM_low);
+    CFanControl::m_GPUFanSpeed = CFanControl::FCEC.DirectECRead(FAN2_Current_RPM_high) << 8 | CFanControl::FCEC.DirectECRead(FAN2_Current_RPM_low);
 }
 
 void CFanControl::UpdateMaxFanSpeedSet()
 {
-    BYTE ReadMaxFanSpeedValue = CFanControl::FCEC.readByte(MaxFanSpeedAddress);
-    if (CFanControl::m_MaxFanSpeedSet != ReadMaxFanSpeedValue && ReadMaxFanSpeedValue >= 22 && ReadMaxFanSpeedValue <= 58)
-    {
-        CFanControl::m_MaxFanSpeedSet = ReadMaxFanSpeedValue;
-    }
+    //BYTE ReadMaxFanSpeedValue = CFanControl::FCEC.readByte(MaxFanSpeedAddress);
+    //if (CFanControl::m_MaxFanSpeedSet != ReadMaxFanSpeedValue && ReadMaxFanSpeedValue >= 22 && ReadMaxFanSpeedValue <= 58)
+    //{
+    //    CFanControl::m_MaxFanSpeedSet = ReadMaxFanSpeedValue;
+    //}
+
+    CFanControl::m_MaxFanSpeedSet = CFanControl::FCEC.DirectECRead(Fan_RPM_SET);
+
 }
 
 
@@ -219,62 +244,97 @@ void CFanControl::SetMaxFanSpeed()
     unsigned short int MaxFanSpeedValue = InterpolateFanSpeed();
     if (CFanControl::m_MaxFanSpeedSet != MaxFanSpeedValue)
     {
-        if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, MaxFanSpeedValue))
-            CFanControl::m_MaxFanSpeedSet = MaxFanSpeedValue;
+        //if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, MaxFanSpeedValue))
+        //    CFanControl::m_MaxFanSpeedSet = MaxFanSpeedValue;
+        CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, MaxFanSpeedValue);
+        CFanControl::m_MaxFanSpeedSet = MaxFanSpeedValue;
     }
 
+
+
+    BYTE current = CFanControl::m_ModeSet;
+    BYTE target = current;
+    if (CFanControl::BIOSVersionNoV31)
+    {   //不是V31时
     // Mode set
-    switch (CFanControl::m_ModeSet)
-    {
+        switch (CFanControl::m_ModeSet)
+        {
         case GameMode: {
             if (MaxFanSpeedValue <= 35)
             {
-                CFanControl::FCEC.writeByte(ModeAddress, DiyMode);
-                CFanControl::m_ModeSet = DiyMode;
+                target = DiyMode;
             }
             break;
         }
         case PerformanceMode: {
             if (MaxFanSpeedValue <= 35)
             {
-                CFanControl::FCEC.writeByte(ModeAddress, DiyMode);
-                CFanControl::m_ModeSet = DiyMode;
+                target = DiyMode;
             }
             else
             {
-                CFanControl::FCEC.writeByte(ModeAddress, GameMode);
-                CFanControl::m_ModeSet = GameMode;
+                target = GameMode;
             }
             break;
         }
         case QuietMode: {
             //cout << "监测到QuietMode,初始化Mode参数，解锁GPU功耗和FanSpeed限制\n";
-            if (CFanControl::FCEC.writeByte(ModeAddress, GameMode)) // QuietMode必须先进入GameMode，初始化解锁GPU功耗墙；
-            {
-                CFanControl::m_ModeSet = GameMode;
-                //std::this_thread::sleep_for(std::chrono::milliseconds(700));
-                //std::this_thread::sleep_for(std::chrono::milliseconds(210));
-                //CFanControl::FCEC.writeByte(ModeAddress, DiyMode);
-            }
+            target = GameMode;
             break;
         }
         case DiyMode: {
             if (MaxFanSpeedValue > 35)
             {
-                CFanControl::FCEC.writeByte(ModeAddress, GameMode);
-                CFanControl::m_ModeSet = GameMode;
+                target = GameMode;
             }
             break;
         }
-        default: {//其他DiyMode值
+        default: {
+
+            break;
+        }
+        }//switch endline
+    }
+    else
+    {   //是V31时
+        switch (CFanControl::m_ModeSet)
+        {
+        case GameMode: {
             if (MaxFanSpeedValue > 35)
             {
-                CFanControl::FCEC.writeByte(ModeAddress, GameMode);
-                CFanControl::m_ModeSet = GameMode;
+                target = PerformanceMode;
             }
             break;
         }
-    }//switch endline
+        case PerformanceMode: {
+            if (MaxFanSpeedValue <= 35)
+            {
+                target = GameMode;
+            }
+            break;
+        }
+        case QuietMode: 
+        case DiyMode: {
+            if (MaxFanSpeedValue <= 35)
+            {
+                target = GameMode;
+            }
+            else
+            {
+                target = PerformanceMode;
+            }
+            break;
+        }
+        default: {
 
+            break;
+        }
+        }//switch endline
+
+    }
+
+    if (target != current) {
+        CFanControl::FCEC.writeByte(ModeAddress, target);
+        CFanControl::m_ModeSet = target;
+    }
 }
-

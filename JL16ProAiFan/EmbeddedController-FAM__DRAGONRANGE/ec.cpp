@@ -26,8 +26,6 @@ EmbeddedController::EmbeddedController(
 
     if (this->driver.initialize())
         this->driverLoaded = TRUE;
-
-    
 }
 
 VOID EmbeddedController::close()
@@ -98,90 +96,12 @@ short int EmbeddedController::readByte(BYTE bRegister)
     return -1;
 }
 
-WORD EmbeddedController::readWord(BYTE bRegister)
-{
-    BYTE firstByte = 0x00;
-    BYTE secondByte = 0x00;
-    WORD result = 0x00;
-
-    if (this->operation(READ, bRegister, &firstByte) &&
-        this->operation(READ, bRegister + 0x01, &secondByte))
-    {
-        if (endianness == BIG_ENDIAN)
-            std::swap(firstByte, secondByte);
-        result = firstByte | (secondByte << 8);
-
-    }
-
-    return result;
-}
-
-DWORD EmbeddedController::readDword(BYTE bRegister)
-{
-    BYTE firstByte = 0x00;
-    BYTE secondByte = 0x00;
-    BYTE thirdByte = 0x00;
-    BYTE fourthByte = 0x00;
-    DWORD result = 0x00;
-
-    if (this->operation(READ, bRegister, &firstByte) &&
-        this->operation(READ, bRegister + 0x01, &secondByte) &&
-        this->operation(READ, bRegister + 0x02, &thirdByte) &&
-        this->operation(READ, bRegister + 0x03, &fourthByte))
-    {
-        if (endianness == BIG_ENDIAN)
-        {
-            std::swap(firstByte, fourthByte);
-            std::swap(secondByte, thirdByte);
-        }
-        result = firstByte |
-                 (secondByte << 8) |
-                 (thirdByte << 16) |
-                 (fourthByte << 24);
-    }
-
-    return result;
-}
 
 BOOL EmbeddedController::writeByte(BYTE bRegister, BYTE value)
 {
     return this->operation(WRITE, bRegister, &value);
 }
 
-BOOL EmbeddedController::writeWord(BYTE bRegister, WORD value)
-{
-    BYTE firstByte = value & 0xFF;
-    BYTE secondByte = value >> 8;
-
-    if (endianness == BIG_ENDIAN)
-        std::swap(firstByte, secondByte);
-
-    if (this->operation(WRITE, bRegister, &firstByte) &&
-        this->operation(WRITE, bRegister + 0x01, &secondByte))
-        return TRUE;
-    return FALSE;
-}
-
-BOOL EmbeddedController::writeDword(BYTE bRegister, DWORD value)
-{
-    BYTE firstByte = value & 0xFF;
-    BYTE secondByte = (value >> 8) & 0xFF;
-    BYTE thirdByte = (value >> 16) & 0xFF;
-    BYTE fourthByte = value >> 24;
-
-    if (endianness == BIG_ENDIAN)
-    {
-        std::swap(firstByte, fourthByte);
-        std::swap(secondByte, thirdByte);
-    }
-
-    if (this->operation(WRITE, bRegister, &firstByte) &&
-        this->operation(WRITE, bRegister + 0x01, &secondByte) &&
-        this->operation(WRITE, bRegister + 0x02, &thirdByte) &&
-        this->operation(WRITE, bRegister + 0x03, &fourthByte))
-        return TRUE;
-    return FALSE;
-}
 
 BOOL EmbeddedController::operation(BYTE mode, BYTE bRegister, BYTE *value)
 {
@@ -228,4 +148,53 @@ BOOL EmbeddedController::status(BYTE flag)
     }
 
     return FALSE;
+}
+
+
+
+/// ³õÊ¼»¯ EC¡£
+void EmbeddedController::EC_init()
+{
+    byte EC_CHIP_ID1 = DirectECRead(0x2000);
+    if (EC_CHIP_ID1 == 0x55)
+    {
+        byte val = DirectECRead(0x1060);
+        val = (byte)(val | 0x80);
+        DirectECWrite(0x1060, val); // enable EC RAM
+    }
+}
+
+//void DirectECWrite(uint16_t Addr, BYTE data, BYTE EC_ADDR_PORT = 0x4e, BYTE EC_DATA_PORT = 0x4f);
+void EmbeddedController::DirectECWrite(uint16_t Addr, BYTE data, BYTE EC_ADDR_PORT, BYTE EC_DATA_PORT) {
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2E);
+    this->driver.writeIoPortByte(EC_DATA_PORT, 0x11);
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2F);
+    this->driver.writeIoPortByte(EC_DATA_PORT, static_cast<BYTE>((Addr >> 8) & 0xFF));
+    
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2E);
+    this->driver.writeIoPortByte(EC_DATA_PORT, 0x10);
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2F);
+    this->driver.writeIoPortByte(EC_DATA_PORT, static_cast<BYTE>(Addr & 0xFF));
+    
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2E);
+    this->driver.writeIoPortByte(EC_DATA_PORT, 0x12);
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2F);
+    this->driver.writeIoPortByte(EC_DATA_PORT, data);
+}
+//BYTE DirectECRead(uint16_t Addr, BYTE EC_ADDR_PORT = 0x4e, BYTE EC_DATA_PORT = 0x4f);
+BYTE EmbeddedController::DirectECRead(uint16_t Addr, BYTE EC_ADDR_PORT, BYTE EC_DATA_PORT) {
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2E);
+    this->driver.writeIoPortByte(EC_DATA_PORT, 0x11);
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2F);
+    this->driver.writeIoPortByte(EC_DATA_PORT, static_cast<BYTE>((Addr >> 8) & 0xFF));
+    
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2E);
+    this->driver.writeIoPortByte(EC_DATA_PORT, 0x10);
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2F);
+    this->driver.writeIoPortByte(EC_DATA_PORT, static_cast<BYTE>(Addr & 0xFF));
+    
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2E);
+    this->driver.writeIoPortByte(EC_DATA_PORT, 0x12);
+    this->driver.writeIoPortByte(EC_ADDR_PORT, 0x2F);
+    return this->driver.readIoPortByte(EC_DATA_PORT);
 }
