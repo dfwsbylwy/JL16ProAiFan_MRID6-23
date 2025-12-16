@@ -17,10 +17,13 @@
 #define IDC_STATIC_CPUFanSpeed          1018
 #define IDC_STATIC_CPUTemp              1019
 #define IDC_STATIC_GPUFanSpeed          1020
-#define IDC_STATIC_FanControlInfo       1021
+#define IDC_STATIC_Steps                1021
 #define IDC_BTN_Mode00                  1022
 #define IDC_BTN_Mode02                  1023
+#define IDC_STATIC_ModeSet              1024
 #define IDC_BTN_AiFanReboot             1025
+#define IDC_STATIC_MaxTemp              1026
+#define IDC_STATIC_MaxFanSpeedSet       1027
 #define IDC_IMAGE1                      1028
 #define IDC_CHECK_FanSetStatus          1030
 #define IDC_CHECK_GpuMaxClock           1031

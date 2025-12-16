@@ -134,6 +134,7 @@ protected:
 
 private:
 	CFont m_bFont;
+
 };
 
 

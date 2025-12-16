@@ -156,6 +156,8 @@ BEGIN_MESSAGE_MAP(CJL16ProAiFanDlg, CDialogEx)
 	ON_WM_HSCROLL()
 
 	ON_BN_CLICKED(IDC_CHECK_AutoRun, &CJL16ProAiFanDlg::OnBnClickedCheckAutorun)
+
+
 END_MESSAGE_MAP()
 
 
@@ -745,7 +747,13 @@ LRESULT CJL16ProAiFanDlg::OnUpdateUI(WPARAM wParam, LPARAM lParam)
 {
 	//数据更新
 	// 将变量转换为CString
-	CString str;
+	//CString str;
+
+	//std::string formatted = std::format("{}\n{:X}\n{}\n{}", \
+	//	CFanControl::m_Steps, CFanControl::m_ModeSet, CFanControl::m_MaxTemp, CFanControl::m_MaxFanSpeedSet);
+	//str = formatted.c_str();
+	//SetDlgItemText(IDC_STATIC_FanControlInfo, str);
+
 
 	// 更新静态文本的值
 	SetDlgItemInt(IDC_STATIC_CPUTemp, CFanControl::m_CPUTemp, FALSE);
@@ -753,7 +761,14 @@ LRESULT CJL16ProAiFanDlg::OnUpdateUI(WPARAM wParam, LPARAM lParam)
 	SetDlgItemInt(IDC_STATIC_CPUFanSpeed, CFanControl::m_CPUFanSpeed, FALSE);
 	SetDlgItemInt(IDC_STATIC_GPUFanSpeed, CFanControl::m_GPUFanSpeed, FALSE);
 
+	SetDlgItemInt(IDC_STATIC_Steps, CFanControl::m_Steps, FALSE);
+	SetDlgItemInt(IDC_STATIC_ModeSet, CFanControl::m_ModeSet, FALSE);
+	SetDlgItemInt(IDC_STATIC_MaxTemp, CFanControl::m_MaxTemp, FALSE);
+	SetDlgItemInt(IDC_STATIC_MaxFanSpeedSet, CFanControl::m_MaxFanSpeedSet * 100, FALSE);
 
+
+
+	// 更新状态条显示
 	m_SLIDER_MaxFanSpeedSet.SetPos(CFanControl::m_MaxFanSpeedSet);
 
 	m_ProgressCtrl_CPUTemp.SetPos(CFanControl::m_CPUTemp);
@@ -762,10 +777,7 @@ LRESULT CJL16ProAiFanDlg::OnUpdateUI(WPARAM wParam, LPARAM lParam)
 	m_ProgressCtrl_GPUFanSpeed.SetPos(CFanControl::m_GPUFanSpeed);
 
 
-	std::string formatted = std::format("{}\n{:X}\n{}\n{}",\
-		         CFanControl::m_Steps, CFanControl::m_ModeSet, CFanControl::m_MaxTemp, CFanControl::m_MaxFanSpeedSet);
-	str = formatted.c_str();
-	SetDlgItemText(IDC_STATIC_FanControlInfo, str);
+
 
 
 	return 0;
@@ -1198,7 +1210,7 @@ void CJL16ProAiFanDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
 			}
 
 			CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, CFanControl::m_MaxFanSpeedSet);
-
+			SetDlgItemInt(IDC_STATIC_MaxFanSpeedSet, CFanControl::m_MaxFanSpeedSet * 100, FALSE);
 			WritePrivateProfileString(_T("config"), _T("m_MaxFanSpeedSet"), std::to_wstring(CFanControl::m_MaxFanSpeedSet).c_str(), JL16ProAiFanINI);
 
 			if (!CFanControl::m_FanSpeedZero && CFanControl::m_MaxFanSpeedSet != 0)
