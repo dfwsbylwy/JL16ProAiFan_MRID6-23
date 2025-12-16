@@ -18,5 +18,4 @@ https://github.com/Demion/nvapioc  //独显GPU降压、最大频率设置
 
 https://github.com/zhongyang219/TrafficMonitor（/blob/master/TrafficMonitor/auto_start_helper.cpp //开机自启）
 
-运行图：
-![image](https://github.com/dfwsbylwy/JL16ProAiFan_MRID6-23/tree/main/image/running.png)
+![运行图](https://github.com/dfwsbylwy/JL16ProAiFan_MRID6-23/tree/main/image/running.png?raw=true)
