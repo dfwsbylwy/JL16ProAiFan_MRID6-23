@@ -43,7 +43,28 @@ std::map<unsigned short int, unsigned short int> CFanControl::m_FanSpeedCache;
     //构造函数，使用成员初始化列表初始化成员变量
 CFanControl::CFanControl( )
 {
+    ECToolInit();
+}
 
+void CFanControl::ECToolInit()
+{
+    unsigned char EC_CHIP_ID1;
+    unsigned char EC_CHIP_ID2;
+    unsigned char EC_CHIP_Ver;
+
+    // ITE IT-557x chip is DLM architecture for EC  RAM and It's support 6K/8K RAM.
+    // If used RAM less  than 4K, you can access EC RAM form 0x000--0xFFF by 4E/4F IO port
+    // If used RAM more than 4K, RAM address change to 0xC000
+    // If you want to access EC RAM by 4E/4F IO port, you must set as follow register first
+    // REG_1060[BIT7]
+    EC_CHIP_ID1 = CFanControl::FCEC.DirectECRead(0x2000);
+    EC_CHIP_ID2 = CFanControl::FCEC.DirectECRead(0x2001);
+    if (0x55 == EC_CHIP_ID1)
+    {
+        EC_CHIP_Ver = CFanControl::FCEC.DirectECRead(0x1060);
+        EC_CHIP_Ver = EC_CHIP_Ver | 0x80;
+        CFanControl::FCEC.DirectECWrite(0x1060, EC_CHIP_Ver);
+    }
 }
 
 

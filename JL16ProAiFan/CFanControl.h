@@ -117,6 +117,7 @@ public:
 
     // 方法定义
     CFanControl();
+    void ECToolInit();
     void TempSpeedTableSet(std::vector<std::vector<unsigned short int>> vTempSpeedTable);
     unsigned short int InterpolateFanSpeed();
     //void UpdateTemp(short int maxup = 10, short int maxdown = -3);
