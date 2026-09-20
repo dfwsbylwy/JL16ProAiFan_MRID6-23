@@ -9,6 +9,7 @@
 #include <thread>
 #include <chrono>
 
+
 //#define BaseFanSpeed 2100
 #define BaseFanSpeed 1000
 
@@ -30,6 +31,8 @@ bool CFanControl::m_JiaoLongWMIexeisOK = FALSE;  //同时受BIOSVersionNoV31控制
 //BIOSVersionV31版本号V31不具有最大转速控制。
 bool CFanControl::BIOSVersionNoV31 = true;
 BYTE CFanControl::m_MaxFanSpeedSet = 25;
+BYTE CFanControl::m_Fan1SpeedSet = 25;
+BYTE CFanControl::m_Fan2SpeedSet = 25;
 BYTE CFanControl::m_ModeSet = GameMode;
 
 
@@ -43,7 +46,8 @@ std::map<unsigned short int, unsigned short int> CFanControl::m_FanSpeedCache;
     //构造函数，使用成员初始化列表初始化成员变量
 CFanControl::CFanControl( )
 {
-    ECToolInit();
+    //ECToolInit();
+    CFanControl::FCEC.EC_init();
 }
 
 void CFanControl::ECToolInit()
@@ -128,20 +132,6 @@ unsigned short int CFanControl::InterpolateFanSpeed( ) {
 //void CFanControl::UpdateTemp(short int maxup, short int maxdown)
 void CFanControl::UpdateTemp()
 {
-    //BYTE ReadCPUTemp = CFanControl::FCEC.readByte(CPUTempAddress);
-    //if (ReadCPUTemp >= 30 && ReadCPUTemp <= 120)
-    //    CFanControl::m_CPUTemp = ReadCPUTemp;
-
-    //BYTE ReadGPUTemp = CFanControl::FCEC.readByte(GPUtempAddress);
-    //if (ReadGPUTemp >= 30 && ReadGPUTemp <= 120)
-    //    CFanControl::m_GPUTemp = ReadGPUTemp;
-
-    //    // 每次最大温度最多降3度，最多上升10度，防止温度读取错误陡变化;
-    //short int MaxTempChaDiff = max(CFanControl::m_CPUTemp, CFanControl::m_GPUTemp) - CFanControl::m_MaxTemp;
-
-    //MaxTempChaDiff = max(min(MaxTempChaDiff, maxup), maxdown);  // 值限制在-3到10
-    //CFanControl::m_MaxTemp = CFanControl::m_MaxTemp + MaxTempChaDiff;
-
     CFanControl::m_CPUTemp = CFanControl::FCEC.DirectECRead(DTS_CPU);
     CFanControl::m_GPUTemp = CFanControl::FCEC.DirectECRead(DTS_GPU);
 
@@ -152,7 +142,7 @@ void CFanControl::UpdateTemp()
 
 void CFanControl::FanSpeedNoZero( )
 {
-    if (CFanControl::m_CPUFanSpeed < BaseFanSpeed && CFanControl::m_GPUFanSpeed < BaseFanSpeed)
+    if (CFanControl::m_CPUFanSpeed < BaseFanSpeed || CFanControl::m_GPUFanSpeed < BaseFanSpeed)
     {
         if (CFanControl::m_MaxTemp >= 65 && CFanControl::m_ModeSet != GameMode)
         {
@@ -230,14 +220,10 @@ void CFanControl::UpdateFanSpeed()
 
 void CFanControl::UpdateMaxFanSpeedSet()
 {
-    //BYTE ReadMaxFanSpeedValue = CFanControl::FCEC.readByte(MaxFanSpeedAddress);
-    //if (CFanControl::m_MaxFanSpeedSet != ReadMaxFanSpeedValue && ReadMaxFanSpeedValue >= 22 && ReadMaxFanSpeedValue <= 58)
-    //{
-    //    CFanControl::m_MaxFanSpeedSet = ReadMaxFanSpeedValue;
-    //}
-
-    CFanControl::m_MaxFanSpeedSet = CFanControl::FCEC.DirectECRead(Fan_RPM_SET);
-
+    CFanControl::m_Fan1SpeedSet = CFanControl::FCEC.DirectECRead(Fan1_RPM_SET);
+    CFanControl::m_Fan2SpeedSet = CFanControl::FCEC.DirectECRead(Fan1_RPM_SET);
+    BYTE MaxFanSet = max(CFanControl::m_Fan1SpeedSet, CFanControl::m_Fan2SpeedSet);
+    CFanControl::m_MaxFanSpeedSet = max(min(MaxFanSet, FanSpeedSetHigh), 0);
 }
 
 
@@ -256,19 +242,12 @@ void CFanControl::UpdateMode()
 
 void CFanControl::SetMaxFanSpeed()
 {
-    //if (CFanControl::m_Steps % 10 == 0)
-    //{
-    //    UpdateMaxFanSpeedSet();
-    //}
-
     // MaxFanSpeed set
     unsigned short int MaxFanSpeedValue = InterpolateFanSpeed();
     if (CFanControl::m_MaxFanSpeedSet != MaxFanSpeedValue)
     {
-        //if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, MaxFanSpeedValue))
-        //    CFanControl::m_MaxFanSpeedSet = MaxFanSpeedValue;
-        CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, MaxFanSpeedValue);
         CFanControl::m_MaxFanSpeedSet = MaxFanSpeedValue;
+        CFanControl::FanRpmSet(CFanControl::m_MaxFanSpeedSet);
     }
 
 
@@ -358,4 +337,17 @@ void CFanControl::SetMaxFanSpeed()
         CFanControl::FCEC.writeByte(ModeAddress, target);
         CFanControl::m_ModeSet = target;
     }
+}
+
+
+
+void CFanControl::FanRpmSet(BYTE vuale)
+{
+    CFanControl::FCEC.DirectECWrite(Fan1_RPM_SET, vuale);
+    CFanControl::FCEC.DirectECWrite(Fan2_RPM_SET, vuale);
+}
+
+void CFanControl::FanRpmSet()
+{
+    FanRpmSet(CFanControl::m_MaxFanSpeedSet);
 }

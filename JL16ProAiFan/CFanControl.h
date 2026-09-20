@@ -52,7 +52,9 @@ enum ECMemoryTable : uint16_t
     FAN2_Current_RPM_low  = 0xC833, //3, #GPU Fan Current_RPM Low byte
     Fan1_RPM = 0XC834,      //CPU Fan 的 RPM 值。受Fan_RPM_SET控制
     Fan2_RPM = 0XC835,      //GPU Fan 的 RPM 值。受Fan_RPM_SET控制
-    Fan_RPM_SET = 0xC83C,   //风扇1-2的 RPM 设置
+    //Fan_RPM_SET = 0xC83C,   //风扇1-2的 RPM 设置
+    Fan1_RPM_SET = 0xC83C,   //风扇1-2的 RPM 设置
+    Fan2_RPM_SET = 0xC83D,   //风扇1-2的 RPM 设置
     EC_Version = 0xC411,    //EC 版本
     Temp_Sensor1 = 0xC417,  //#T1#
     Near_CPU = 0xC418,      //#Near_CPU#
@@ -104,6 +106,8 @@ public:
     static bool m_JiaoLongWMIexeisOK;
 
     static BYTE m_MaxFanSpeedSet;
+    static BYTE m_Fan1SpeedSet;
+    static BYTE m_Fan2SpeedSet;
     static BYTE m_ModeSet;  //now status
     static bool BIOSVersionNoV31;
     static unsigned short int m_Steps;
@@ -128,4 +132,6 @@ public:
     void FixedMaxFanSpeed2Mode();
     void UpdateMode();
     void SetMaxFanSpeed();
+    static void FanRpmSet(BYTE vuale);
+    static void FanRpmSet();
 };

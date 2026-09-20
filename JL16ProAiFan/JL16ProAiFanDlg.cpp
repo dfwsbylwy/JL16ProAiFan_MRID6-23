@@ -288,7 +288,7 @@ BOOL CJL16ProAiFanDlg::OnInitDialog()
 					CFanControl::m_MaxFanSpeedSet = MaxFanSpeedSet;
 				}
 				//CFanControl::FCEC.writeByte(MaxFanSpeedAddress, CFanControl::m_MaxFanSpeedSet);
-				CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, CFanControl::m_MaxFanSpeedSet);
+				CFanControl::FanRpmSet(CFanControl::m_MaxFanSpeedSet);
 				//CFC.FixedMaxFanSpeed2Mode();  在ontime运行
 			}
 
@@ -730,12 +730,9 @@ void CJL16ProAiFanDlg::OnExit()
 	//{
 	//	//TcmdProcess(SetPerformaceMode0, TRUE, CFanControl::m_JiaoLongWMIexeisOK);
 	//	CFanControl::FCEC.writeByte(ModeAddress, GameMode);//程序退出，强制写回Gamemode
-	//	//CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35);
 	//}
-	//CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, 35);
 
-
-	CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, 0);
+	CFanControl::FanRpmSet(0);
 	CFanControl::FCEC.close();
 
 	EndDialog(IDCANCEL);
@@ -775,10 +772,6 @@ LRESULT CJL16ProAiFanDlg::OnUpdateUI(WPARAM wParam, LPARAM lParam)
 	m_ProgressCtrl_GPUTemp.SetPos(CFanControl::m_GPUTemp);
 	m_ProgressCtrl_CPUFanSpeed.SetPos(CFanControl::m_CPUFanSpeed);
 	m_ProgressCtrl_GPUFanSpeed.SetPos(CFanControl::m_GPUFanSpeed);
-
-
-
-
 
 	return 0;
 }
@@ -880,7 +873,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode02()
 	//if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 22))
 		
 	{
-		CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, 0);
+		CFanControl::FanRpmSet(0);
 		CFanControl::m_MaxFanSpeedSet = 0;
 		WritePrivateProfileString(_T("config"), _T("m_MaxFanSpeedSet"), std::to_wstring(CFanControl::m_MaxFanSpeedSet).c_str(), JL16ProAiFanINI);
 	}
@@ -897,7 +890,7 @@ void CJL16ProAiFanDlg::OnBnClickedBtnMode00()
 	CFanControl::m_ModeSet = GameMode;
 	//if (CFanControl::FCEC.writeByte(MaxFanSpeedAddress, 35))
 	{
-		CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, 0);
+		CFanControl::FanRpmSet(0);
 		CFanControl::m_MaxFanSpeedSet = 0;
 		WritePrivateProfileString(_T("config"), _T("m_MaxFanSpeedSet"), std::to_wstring(CFanControl::m_MaxFanSpeedSet).c_str(), JL16ProAiFanINI);
 	}
@@ -946,7 +939,7 @@ void CJL16ProAiFanDlg::OnBnClickedCheckFansetstatus()
 			{
 				CFanControl::m_MaxFanSpeedSet = MaxFanSpeedSet;
 				//CFanControl::FCEC.writeByte(MaxFanSpeedAddress, CFanControl::m_MaxFanSpeedSet);
-				CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, MaxFanSpeedSet);
+				CFanControl::FanRpmSet(CFanControl::m_MaxFanSpeedSet);
 			}
 
 			if (!CFanControl::m_FanSpeedZero && CFanControl::m_MaxFanSpeedSet != 0)
@@ -1209,7 +1202,7 @@ void CJL16ProAiFanDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar
 				CFanControl::m_MaxFanSpeedSet = min(FanSpeedGet, FanSpeedSetHigh);
 			}
 
-			CFanControl::FCEC.DirectECWrite(Fan_RPM_SET, CFanControl::m_MaxFanSpeedSet);
+			CFanControl::FanRpmSet(CFanControl::m_MaxFanSpeedSet);
 			SetDlgItemInt(IDC_STATIC_MaxFanSpeedSet, CFanControl::m_MaxFanSpeedSet * 100, FALSE);
 			WritePrivateProfileString(_T("config"), _T("m_MaxFanSpeedSet"), std::to_wstring(CFanControl::m_MaxFanSpeedSet).c_str(), JL16ProAiFanINI);
 
